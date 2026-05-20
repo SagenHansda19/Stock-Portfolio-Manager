@@ -35,6 +35,28 @@ public class GlobalExceptionHandler {
                 ));
     }
 
+    @ExceptionHandler(PortfolioHoldingNotFoundException.class)
+    public ResponseEntity<ApiError> handlePortfolioHoldingNotFound(PortfolioHoldingNotFoundException exception) {
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .body(new ApiError(
+                        HttpStatus.NOT_FOUND.value(),
+                        exception.getMessage(),
+                        Instant.now()
+                ));
+    }
+
+    @ExceptionHandler(InsufficientStockQuantityException.class)
+    public ResponseEntity<ApiError> handleInsufficientStockQuantity(InsufficientStockQuantityException exception) {
+        return ResponseEntity
+                .badRequest()
+                .body(new ApiError(
+                        HttpStatus.BAD_REQUEST.value(),
+                        exception.getMessage(),
+                        Instant.now()
+                ));
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, String>> handleValidationErrors(MethodArgumentNotValidException exception) {
         Map<String, String> errors = new HashMap<>();

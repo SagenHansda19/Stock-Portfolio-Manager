@@ -1,6 +1,5 @@
 package com.stock.stockbackend.entity;
 
-import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -10,9 +9,12 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
+import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.AllArgsConstructor;
@@ -24,7 +26,14 @@ import lombok.Setter;
 @Table(
         name = "portfolios",
         indexes = {
-                @Index(name = "idx_portfolios_user_id", columnList = "user_id")
+                @Index(name = "idx_portfolios_user_id", columnList = "user_id"),
+                @Index(name = "idx_portfolios_stock_symbol", columnList = "stock_symbol")
+        },
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        name = "uk_portfolios_user_stock_symbol",
+                        columnNames = {"user_id", "stock_symbol"}
+                )
         }
 )
 @Getter
@@ -42,6 +51,24 @@ public class Portfolio extends BaseEntity {
     @Column(length = 500)
     private String description;
 
+    @NotBlank
+    @Size(max = 20)
+    @Column(name = "stock_symbol", nullable = false, length = 20)
+    private String stockSymbol;
+
+    @NotNull
+    @DecimalMin(value = "0.0000")
+    @Column(nullable = false, precision = 19, scale = 4)
+    private BigDecimal quantity = BigDecimal.ZERO;
+
+    @NotNull
+    @DecimalMin(value = "0.0000")
+    @Column(name = "average_buy_price", nullable = false, precision = 19, scale = 4)
+    private BigDecimal averageBuyPrice = BigDecimal.ZERO;
+
+    @Column(nullable = false)
+    private boolean active = true;
+
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(
@@ -51,6 +78,6 @@ public class Portfolio extends BaseEntity {
     )
     private User user;
 
-    @OneToMany(mappedBy = "portfolio", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "portfolio")
     private List<Transaction> transactions = new ArrayList<>();
 }
