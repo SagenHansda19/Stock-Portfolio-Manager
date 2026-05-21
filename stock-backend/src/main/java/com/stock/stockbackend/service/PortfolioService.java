@@ -3,6 +3,7 @@ package com.stock.stockbackend.service;
 import com.stock.stockbackend.dto.PortfolioHoldingResponse;
 import com.stock.stockbackend.dto.PortfolioSummaryResponse;
 import com.stock.stockbackend.dto.PortfolioTradeRequest;
+import com.stock.stockbackend.dto.StockPriceResponse;
 import com.stock.stockbackend.entity.Portfolio;
 import com.stock.stockbackend.entity.StockPrice;
 import com.stock.stockbackend.entity.Transaction;
@@ -34,24 +35,26 @@ public class PortfolioService {
     private final TransactionRepository transactionRepository;
     private final UserRepository userRepository;
     private final StockPriceRepository stockPriceRepository;
+    private final StockPriceService stockPriceService;
 
     @Transactional
     public PortfolioHoldingResponse buyStock(String userEmail, PortfolioTradeRequest request) {
         String symbol = normalizeSymbol(request.symbol());
+        BigDecimal marketPrice = fetchMarketPrice(symbol);
         User user = getUserByEmail(userEmail);
 
         Portfolio holding = portfolioRepository.findByUserEmailAndStockSymbol(userEmail, symbol)
                 .orElseGet(() -> createHolding(user, symbol));
 
         BigDecimal newQuantity = holding.getQuantity().add(request.quantity());
-        BigDecimal newAverageBuyPrice = calculateAverageBuyPrice(holding, request.quantity(), request.price());
+        BigDecimal newAverageBuyPrice = calculateAverageBuyPrice(holding, request.quantity(), marketPrice);
 
         holding.setQuantity(scale(newQuantity));
         holding.setAverageBuyPrice(newAverageBuyPrice);
         holding.setActive(true);
 
         Portfolio savedHolding = portfolioRepository.save(holding);
-        saveTransaction(savedHolding, symbol, TransactionType.BUY, request.quantity(), request.price());
+        saveTransaction(savedHolding, symbol, TransactionType.BUY, request.quantity(), marketPrice);
 
         return toHoldingResponse(savedHolding);
     }
@@ -67,6 +70,7 @@ public class PortfolioService {
             );
         }
 
+        BigDecimal marketPrice = fetchMarketPrice(symbol);
         BigDecimal remainingQuantity = holding.getQuantity().subtract(request.quantity());
         holding.setQuantity(scale(remainingQuantity));
 
@@ -76,7 +80,7 @@ public class PortfolioService {
         }
 
         Portfolio savedHolding = portfolioRepository.save(holding);
-        saveTransaction(savedHolding, symbol, TransactionType.SELL, request.quantity(), request.price());
+        saveTransaction(savedHolding, symbol, TransactionType.SELL, request.quantity(), marketPrice);
 
         return toHoldingResponse(savedHolding);
     }
@@ -187,6 +191,11 @@ public class PortfolioService {
         return stockPriceRepository.findTopByStockSymbolOrderByPriceTimestampDesc(holding.getStockSymbol())
                 .map(StockPrice::getPrice)
                 .orElse(holding.getAverageBuyPrice());
+    }
+
+    private BigDecimal fetchMarketPrice(String symbol) {
+        StockPriceResponse stockPrice = stockPriceService.fetchAndSaveLatestPrice(symbol);
+        return stockPrice.price();
     }
 
     private String normalizeSymbol(String symbol) {

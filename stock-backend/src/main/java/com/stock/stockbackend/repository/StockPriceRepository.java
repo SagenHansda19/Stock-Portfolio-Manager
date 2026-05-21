@@ -8,5 +8,7 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface StockPriceRepository extends JpaRepository<StockPrice, Long> {
 
+    Optional<StockPrice> findByStockSymbol(String stockSymbol);
+
     Optional<StockPrice> findTopByStockSymbolOrderByPriceTimestampDesc(String stockSymbol);
 }

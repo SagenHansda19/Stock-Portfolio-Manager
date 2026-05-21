@@ -57,6 +57,50 @@ public class GlobalExceptionHandler {
                 ));
     }
 
+    @ExceptionHandler(StockSymbolNotFoundException.class)
+    public ResponseEntity<ApiError> handleStockSymbolNotFound(StockSymbolNotFoundException exception) {
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .body(new ApiError(
+                        HttpStatus.NOT_FOUND.value(),
+                        exception.getMessage(),
+                        Instant.now()
+                ));
+    }
+
+    @ExceptionHandler(InvalidStockSymbolException.class)
+    public ResponseEntity<ApiError> handleInvalidStockSymbol(InvalidStockSymbolException exception) {
+        return ResponseEntity
+                .badRequest()
+                .body(new ApiError(
+                        HttpStatus.BAD_REQUEST.value(),
+                        exception.getMessage(),
+                        Instant.now()
+                ));
+    }
+
+    @ExceptionHandler(StockApiRateLimitException.class)
+    public ResponseEntity<ApiError> handleStockApiRateLimit(StockApiRateLimitException exception) {
+        return ResponseEntity
+                .status(HttpStatus.TOO_MANY_REQUESTS)
+                .body(new ApiError(
+                        HttpStatus.TOO_MANY_REQUESTS.value(),
+                        exception.getMessage(),
+                        Instant.now()
+                ));
+    }
+
+    @ExceptionHandler(StockApiException.class)
+    public ResponseEntity<ApiError> handleStockApiException(StockApiException exception) {
+        return ResponseEntity
+                .status(HttpStatus.BAD_GATEWAY)
+                .body(new ApiError(
+                        HttpStatus.BAD_GATEWAY.value(),
+                        exception.getMessage(),
+                        Instant.now()
+                ));
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, String>> handleValidationErrors(MethodArgumentNotValidException exception) {
         Map<String, String> errors = new HashMap<>();

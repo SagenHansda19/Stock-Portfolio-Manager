@@ -25,8 +25,8 @@ import lombok.Setter;
         },
         uniqueConstraints = {
                 @UniqueConstraint(
-                        name = "uk_stock_prices_symbol_timestamp",
-                        columnNames = {"stock_symbol", "price_timestamp"}
+                        name = "uk_stock_prices_symbol",
+                        columnNames = "stock_symbol"
                 )
         }
 )

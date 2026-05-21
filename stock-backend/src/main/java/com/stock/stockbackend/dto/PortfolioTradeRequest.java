@@ -13,10 +13,6 @@ public record PortfolioTradeRequest(
 
         @NotNull
         @DecimalMin(value = "0.0001", message = "Quantity must be greater than 0")
-        BigDecimal quantity,
-
-        @NotNull
-        @DecimalMin(value = "0.0001", message = "Price must be greater than 0")
-        BigDecimal price
+        BigDecimal quantity
 ) {
 }
