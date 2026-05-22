@@ -9,6 +9,7 @@ import com.stock.stockbackend.repository.StockPriceRepository;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Instant;
+import java.util.List;
 import java.util.Locale;
 import java.util.regex.Pattern;
 import lombok.RequiredArgsConstructor;
@@ -45,6 +46,17 @@ public class StockPriceService {
         log.info("Saved latest stock price for symbol={} price={}", symbol, savedStockPrice.getPrice());
 
         return toResponse(savedStockPrice);
+    }
+
+    @Transactional(readOnly = true)
+    public List<String> getTrackedSymbols() {
+        return stockPriceRepository.findAll()
+                .stream()
+                .map(StockPrice::getStockSymbol)
+                .filter(symbol -> symbol != null && !symbol.isBlank())
+                .distinct()
+                .sorted()
+                .toList();
     }
 
     private void validateQuote(String symbol, FinnhubQuoteResponse quote) {
