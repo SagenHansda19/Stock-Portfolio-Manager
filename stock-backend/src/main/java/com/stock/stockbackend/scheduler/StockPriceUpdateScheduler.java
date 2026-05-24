@@ -18,7 +18,10 @@ public class StockPriceUpdateScheduler {
 
     private final StockPriceService stockPriceService;
 
-    @Scheduled(fixedDelayString = "${stock.price.update.fixed-delay-ms}")
+    @Scheduled(
+            initialDelayString = "${stock.price.update.initial-delay-ms}",
+            fixedDelayString = "${stock.price.update.fixed-delay-ms}"
+    )
     public void updateTrackedStockPrices() {
         log.info("Updating stock prices...");
 

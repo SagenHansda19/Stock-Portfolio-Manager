@@ -79,6 +79,17 @@ public class GlobalExceptionHandler {
                 ));
     }
 
+    @ExceptionHandler(InvalidPortfolioSortException.class)
+    public ResponseEntity<ApiError> handleInvalidPortfolioSort(InvalidPortfolioSortException exception) {
+        return ResponseEntity
+                .badRequest()
+                .body(new ApiError(
+                        HttpStatus.BAD_REQUEST.value(),
+                        exception.getMessage(),
+                        Instant.now()
+                ));
+    }
+
     @ExceptionHandler(StockApiRateLimitException.class)
     public ResponseEntity<ApiError> handleStockApiRateLimit(StockApiRateLimitException exception) {
         return ResponseEntity
