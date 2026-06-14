@@ -4,3 +4,20 @@ export const getPortfolio = async (params = {}) => {
   const response = await apiClient.get('/api/portfolio', { params })
   return response.data
 }
+
+export const buyStock = async (tradeData) => {
+  const response = await apiClient.post('/api/portfolio/buy', tradeData)
+  return response.data
+}
+
+export const sellStock = async (tradeData) => {
+  const response = await apiClient.post('/api/portfolio/sell', tradeData)
+  return response.data
+}
+
+export const getStockHistory = async (symbol, range = '1D') => {
+  const response = await apiClient.get(`/api/stocks/history/${symbol}`, {
+    params: { range },
+  })
+  return response.data
+}

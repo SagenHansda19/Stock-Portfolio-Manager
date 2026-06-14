@@ -6,7 +6,7 @@ const ProtectedRoute = () => {
   const location = useLocation()
 
   if (isInitializing) {
-    return <div className="p-6 text-sm text-slate-600">Loading...</div>
+    return <div className="p-6 text-sm text-slate-500 dark:text-slate-400">Loading...</div>
   }
 
   if (!isAuthenticated) {

@@ -1,11 +1,14 @@
 package com.stock.stockbackend.controller;
 
+import com.stock.stockbackend.dto.StockHistoryPointResponse;
 import com.stock.stockbackend.dto.StockPriceResponse;
+import java.util.List;
 import com.stock.stockbackend.service.StockPriceService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -19,5 +22,13 @@ public class StockController {
     @GetMapping("/{symbol}")
     public ResponseEntity<StockPriceResponse> getStockPrice(@PathVariable String symbol) {
         return ResponseEntity.ok(stockPriceService.fetchAndSaveLatestPrice(symbol));
+    }
+
+    @GetMapping("/history/{symbol}")
+    public ResponseEntity<List<StockHistoryPointResponse>> getStockHistory(
+            @PathVariable String symbol,
+            @RequestParam(defaultValue = "1D") String range
+    ) {
+        return ResponseEntity.ok(stockPriceService.getHistoricalPrices(symbol, range));
     }
 }
