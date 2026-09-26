@@ -39,6 +39,19 @@ public class StockApiConfig {
                 .build();
     }
 
+    @Bean
+    public RestClient geminiRestClient(
+            @Value("${stock.api.gemini.base-url}") String baseUrl,
+            @Value("${stock.api.connect-timeout-seconds}") long connectTimeoutSeconds,
+            @Value("${stock.api.gemini.read-timeout-seconds}") long geminiReadTimeoutSeconds
+    ) {
+        return RestClient.builder()
+                .requestFactory(buildRequestFactory(connectTimeoutSeconds, geminiReadTimeoutSeconds))
+                .baseUrl(baseUrl)
+                .defaultHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                .build();
+    }
+
     private SimpleClientHttpRequestFactory buildRequestFactory(long connectTimeoutSeconds, long readTimeoutSeconds) {
         SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
         requestFactory.setConnectTimeout(Duration.ofSeconds(connectTimeoutSeconds));

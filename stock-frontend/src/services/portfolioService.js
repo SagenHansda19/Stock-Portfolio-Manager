@@ -21,3 +21,20 @@ export const getStockHistory = async (symbol, range = '1D') => {
   })
   return response.data
 }
+
+export const getStockQuote = async (symbol) => {
+  const response = await apiClient.get(`/api/stocks/${symbol}`)
+  return response.data
+}
+
+export const searchStocks = async (query) => {
+  const response = await apiClient.get('/api/stocks/search', {
+    params: { q: query },
+  })
+  return response.data
+}
+
+export const analyzePortfolio = async () => {
+  const response = await apiClient.get('/api/portfolio/analyze')
+  return response.data
+}

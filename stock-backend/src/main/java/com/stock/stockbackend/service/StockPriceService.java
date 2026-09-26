@@ -3,6 +3,7 @@ package com.stock.stockbackend.service;
 import com.stock.stockbackend.dto.FinnhubQuoteResponse;
 import com.stock.stockbackend.dto.StockHistoryPointResponse;
 import com.stock.stockbackend.dto.StockPriceResponse;
+import com.stock.stockbackend.dto.StockSearchResponse;
 import com.stock.stockbackend.dto.TwelveDataTimeSeriesResponse;
 import com.stock.stockbackend.entity.StockPrice;
 import com.stock.stockbackend.enums.HistoricalRange;
@@ -19,8 +20,13 @@ import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.Optional;
 import java.util.regex.Pattern;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.stock.stockbackend.entity.StockHistoryCache;
+import com.stock.stockbackend.repository.StockHistoryCacheRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -33,7 +39,6 @@ public class StockPriceService {
 
     private static final Pattern SYMBOL_PATTERN = Pattern.compile("^[A-Z0-9.-]{1,20}$");
     private static final int PRICE_SCALE = 4;
-    private static final long HISTORY_CACHE_TTL_SECONDS = 60;
     private static final DateTimeFormatter INTRADAY_LABEL_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
     private static final DateTimeFormatter WEEKLY_INTRADAY_LABEL_FORMATTER = DateTimeFormatter.ofPattern("EEE HH:mm");
     private static final DateTimeFormatter ONE_MONTH_LABEL_FORMATTER = DateTimeFormatter.ofPattern("MMM d");
@@ -42,7 +47,8 @@ public class StockPriceService {
 
     private final StockApiService stockApiService;
     private final StockPriceRepository stockPriceRepository;
-    private final ConcurrentHashMap<String, CachedHistory> historyCache = new ConcurrentHashMap<>();
+    private final StockHistoryCacheRepository stockHistoryCacheRepository;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Transactional
     public StockPriceResponse fetchAndSaveLatestPrice(String rawSymbol) {
@@ -75,21 +81,55 @@ public class StockPriceService {
                 .toList();
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public List<StockHistoryPointResponse> getHistoricalPrices(String rawSymbol, String rawRange) {
         String symbol = normalizeSymbol(rawSymbol);
         HistoricalRange range = HistoricalRange.fromValue(rawRange);
-        String cacheKey = symbol + ":" + range.getValue();
 
-        CachedHistory cachedHistory = historyCache.get(cacheKey);
-        if (cachedHistory != null && !cachedHistory.isExpired()) {
-            return cachedHistory.points();
+        Optional<StockHistoryCache> optionalCache = stockHistoryCacheRepository
+                .findByStockSymbolAndTimeRange(symbol, range.getValue());
+
+        if (optionalCache.isPresent()) {
+            StockHistoryCache cache = optionalCache.get();
+            long ttl = getCacheTtlSeconds(range);
+            if (cache.getUpdatedAt().plusSeconds(ttl).isAfter(Instant.now())) {
+                try {
+                    return objectMapper.readValue(
+                            cache.getDataJson(),
+                            new TypeReference<List<StockHistoryPointResponse>>() {}
+                    );
+                } catch (JsonProcessingException e) {
+                    log.warn("Failed to deserialize stock history cache for symbol={}, range={}. Fetching fresh.", symbol, range.getValue(), e);
+                }
+            }
         }
 
         TwelveDataTimeSeriesResponse response = stockApiService.fetchTimeSeries(symbol, range);
         List<StockHistoryPointResponse> points = mapHistoryPoints(symbol, range, response);
-        historyCache.put(cacheKey, new CachedHistory(points, Instant.now().plusSeconds(HISTORY_CACHE_TTL_SECONDS)));
+
+        try {
+            String json = objectMapper.writeValueAsString(points);
+            StockHistoryCache cache = optionalCache.orElseGet(StockHistoryCache::new);
+            cache.setStockSymbol(symbol);
+            cache.setTimeRange(range.getValue());
+            cache.setDataJson(json);
+            cache.setUpdatedAt(Instant.now());
+            stockHistoryCacheRepository.save(cache);
+        } catch (JsonProcessingException e) {
+            log.error("Failed to serialize stock history cache for symbol={}, range={}", symbol, range.getValue(), e);
+        }
+
         return points;
+    }
+
+    private long getCacheTtlSeconds(HistoricalRange range) {
+        return switch (range) {
+            case ONE_DAY -> 300L;       // 5 mins
+            case ONE_WEEK -> 3600L;     // 1 hour
+            case ONE_MONTH -> 3600L;    // 1 hour
+            case ONE_YEAR -> 86400L;    // 24 hours
+            case ALL -> 86400L;         // 24 hours
+        };
     }
 
     private void validateQuote(String symbol, FinnhubQuoteResponse quote) {
@@ -194,9 +234,10 @@ public class StockPriceService {
         }
     }
 
-    private record CachedHistory(List<StockHistoryPointResponse> points, Instant expiresAt) {
-        private boolean isExpired() {
-            return Instant.now().isAfter(expiresAt);
+    public StockSearchResponse searchSymbols(String query) {
+        if (query == null || query.isBlank()) {
+            return new StockSearchResponse(0, List.of());
         }
+        return stockApiService.searchSymbols(query.trim());
     }
 }

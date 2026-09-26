@@ -1,0 +1,170 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "StockVerse Runtime Architecture",
+    "output": "stockverse-runtime-architecture.html",
+    "visual_preset": "signal-flow",
+    "animation": "trace",
+    "quality_profile": "showcase",
+    "views": [
+      {
+        "id": "full-topology",
+        "label": "Full Platform Topology",
+        "focus": ["react-frontend", "spring-api", "postgres-db", "redis-cache", "gemini-ai", "finnhub-api"],
+        "note": "Complete runtime architecture showing all 6 core components, boundaries, and data pathways."
+      },
+      {
+        "id": "ai-advisor-path",
+        "label": "AI Advisor Workflow",
+        "focus": ["react-frontend", "spring-api", "redis-cache", "postgres-db", "gemini-ai"],
+        "note": "API checks Redis for cached analysis; on miss, queries PostgreSQL holdings, prompts Gemini via LangChain4j, and caches result."
+      },
+      {
+        "id": "trading-path",
+        "label": "Transactional Trading Workflow",
+        "focus": ["react-frontend", "spring-api", "postgres-db", "redis-cache"],
+        "note": "Trade submitted via JWT, persisted with @Version optimistic lock in PostgreSQL, and triggers Redis @CacheEvict to clear stale analysis."
+      }
+    ]
+  },
+  "components": [
+    {
+      "id": "react-frontend",
+      "type": "frontend",
+      "label": "React Frontend",
+      "sublabel": "Web App / User Interface",
+      "tag": "JWT Auth · Glassmorphism",
+      "brand": "react",
+      "pos": [40, 200],
+      "size": [150, 64]
+    },
+    {
+      "id": "spring-api",
+      "type": "backend",
+      "label": "Spring Boot API",
+      "sublabel": "Trading Engine & Orchestrator",
+      "tag": "LangChain4j · Optimistic Lock",
+      "brand": "spring",
+      "pos": [350, 200],
+      "size": [170, 64]
+    },
+    {
+      "id": "redis-cache",
+      "type": "database",
+      "label": "Redis Cache",
+      "sublabel": "In-Memory Cache :6379",
+      "tag": "@Cacheable · @CacheEvict",
+      "brand": "redis",
+      "pos": [680, 80],
+      "size": [160, 64]
+    },
+    {
+      "id": "postgres-db",
+      "type": "database",
+      "label": "PostgreSQL",
+      "sublabel": "Primary Database :5432",
+      "tag": "Users · Holdings · @Version",
+      "brand": "postgresql",
+      "pos": [680, 320],
+      "size": [160, 64]
+    },
+    {
+      "id": "gemini-ai",
+      "type": "external",
+      "label": "Google Gemini 1.5 Flash",
+      "sublabel": "External AI Provider",
+      "tag": "Low Temp 0.2 · JSON Mode",
+      "brand": "google-gemini",
+      "pos": [980, 80],
+      "size": [170, 64]
+    },
+    {
+      "id": "finnhub-api",
+      "type": "external",
+      "label": "Finnhub API",
+      "sublabel": "Market Data Provider",
+      "tag": "Real-time Quotes & News",
+      "pos": [980, 320],
+      "size": [170, 64]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "StockVerse Platform Core",
+      "wraps": ["spring-api", "redis-cache", "postgres-db"],
+      "pad": 22
+    },
+    {
+      "kind": "security-group",
+      "label": "Data & In-Memory Tier",
+      "wraps": ["redis-cache", "postgres-db"],
+      "pad": 14
+    }
+  ],
+  "connections": [
+    {
+      "id": "client-to-api",
+      "from": "react-frontend",
+      "to": "spring-api",
+      "label": "HTTPS REST (JWT)",
+      "variant": "emphasis"
+    },
+    {
+      "id": "api-to-redis",
+      "from": "spring-api",
+      "to": "redis-cache",
+      "label": "Check Cache / Evict"
+    },
+    {
+      "id": "api-to-postgres",
+      "from": "spring-api",
+      "to": "postgres-db",
+      "label": "JPA / Optimistic Lock"
+    },
+    {
+      "id": "api-to-gemini",
+      "from": "spring-api",
+      "to": "gemini-ai",
+      "label": "Prompt on Cache Miss",
+      "variant": "emphasis"
+    },
+    {
+      "id": "api-to-finnhub",
+      "from": "spring-api",
+      "to": "finnhub-api",
+      "label": "Market Quotes & News",
+      "variant": "dashed"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "The AI Advisor Path",
+      "items": [
+        "1. Frontend requests GET /api/portfolio/analyze with Bearer JWT",
+        "2. Spring Boot checks Redis @Cacheable; on miss, queries PostgreSQL holdings",
+        "3. LangChain4j prompts Gemini 1.5 Flash (temp 0.2, JSON mode) and writes to Redis"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "The Trading Path",
+      "items": [
+        "1. Frontend submits Buy/Sell order via POST /api/trade with JWT",
+        "2. Spring Boot executes transaction with JPA @Version optimistic lock in PostgreSQL",
+        "3. Triggers Redis @CacheEvict('portfolioAnalysis', key='#userId') on successful trade"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "Platform Boundaries & Details",
+      "items": [
+        "Client Boundary: React SPA with Glassmorphism UI and token authentication",
+        "Platform Core: Spring Boot API, PostgreSQL, and Redis in isolated network tier",
+        "External Services: Secure outbound HTTPS to Finnhub (market quotes) and Gemini (AI)"
+      ]
+    }
+  ]
+}

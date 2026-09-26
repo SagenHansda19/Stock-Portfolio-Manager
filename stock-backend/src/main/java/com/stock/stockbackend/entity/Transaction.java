@@ -1,5 +1,6 @@
 package com.stock.stockbackend.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.stock.stockbackend.enums.TransactionType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -37,6 +38,7 @@ import lombok.Setter;
 @AllArgsConstructor
 public class Transaction extends BaseEntity {
 
+    @JsonIgnore
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(

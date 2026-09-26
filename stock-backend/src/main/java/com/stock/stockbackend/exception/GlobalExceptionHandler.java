@@ -6,12 +6,36 @@ import java.util.Map;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.dao.OptimisticLockingFailureException;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    @ExceptionHandler(OptimisticLockingFailureException.class)
+    public ResponseEntity<ApiError> handleOptimisticLockingFailure(OptimisticLockingFailureException exception) {
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)
+                .body(new ApiError(
+                        HttpStatus.CONFLICT.value(),
+                        "Concurrent trade conflict detected. Please retry your trade order.",
+                        Instant.now()
+                ));
+    }
+
+    @ExceptionHandler(TradeConflictException.class)
+    public ResponseEntity<ApiError> handleTradeConflict(TradeConflictException exception) {
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)
+                .body(new ApiError(
+                        HttpStatus.CONFLICT.value(),
+                        exception.getMessage(),
+                        Instant.now()
+                ));
+    }
 
     @ExceptionHandler(EmailAlreadyExistsException.class)
     public ResponseEntity<ApiError> handleEmailAlreadyExists(EmailAlreadyExistsException exception) {
@@ -49,12 +73,23 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(InsufficientStockQuantityException.class)
     public ResponseEntity<ApiError> handleInsufficientStockQuantity(InsufficientStockQuantityException exception) {
         return ResponseEntity
-                .badRequest()
-                .body(new ApiError(
-                        HttpStatus.BAD_REQUEST.value(),
-                        exception.getMessage(),
-                        Instant.now()
-                ));
+            .badRequest()
+            .body(new ApiError(
+                HttpStatus.BAD_REQUEST.value(),
+                exception.getMessage(),
+                Instant.now()
+            ));
+    }
+
+    @ExceptionHandler(InsufficientCashBalanceException.class)
+    public ResponseEntity<ApiError> handleInsufficientCashBalance(InsufficientCashBalanceException exception) {
+        return ResponseEntity
+            .badRequest()
+            .body(new ApiError(
+                HttpStatus.BAD_REQUEST.value(),
+                exception.getMessage(),
+                Instant.now()
+            ));
     }
 
     @ExceptionHandler(StockSymbolNotFoundException.class)

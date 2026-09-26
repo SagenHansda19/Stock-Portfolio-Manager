@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.util.List;
 
 public record PortfolioValuationResponse(
+        BigDecimal cashBalance,
         BigDecimal totalPortfolioValue,
         BigDecimal totalProfitLoss,
         int page,

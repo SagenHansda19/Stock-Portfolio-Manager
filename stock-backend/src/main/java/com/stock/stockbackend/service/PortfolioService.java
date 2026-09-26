@@ -14,6 +14,7 @@ import com.stock.stockbackend.enums.TransactionType;
 import com.stock.stockbackend.exception.InvalidPortfolioSortException;
 import com.stock.stockbackend.exception.InvalidStockSymbolException;
 import com.stock.stockbackend.exception.InsufficientStockQuantityException;
+import com.stock.stockbackend.exception.InsufficientCashBalanceException;
 import com.stock.stockbackend.exception.PortfolioHoldingNotFoundException;
 import com.stock.stockbackend.repository.PortfolioRepository;
 import com.stock.stockbackend.repository.StockPriceRepository;
@@ -63,6 +64,13 @@ public class PortfolioService {
         BigDecimal marketPrice = fetchMarketPrice(symbol);
         User user = getUserByEmail(userEmail);
 
+        BigDecimal cost = request.quantity().multiply(marketPrice);
+        if (user.getCashBalance().compareTo(cost) < 0) {
+            throw new InsufficientCashBalanceException(
+                    "Insufficient cash balance. Required: " + scale(cost) + ", Available: " + scale(user.getCashBalance())
+            );
+        }
+
         Portfolio holding = portfolioRepository.findByUserEmailAndStockSymbol(userEmail, symbol)
                 .orElseGet(() -> createHolding(user, symbol));
 
@@ -72,6 +80,9 @@ public class PortfolioService {
         holding.setQuantity(scale(newQuantity));
         holding.setAverageBuyPrice(newAverageBuyPrice);
         holding.setActive(true);
+
+        user.setCashBalance(scale(user.getCashBalance().subtract(cost)));
+        userRepository.save(user);
 
         Portfolio savedHolding = portfolioRepository.save(holding);
         saveTransaction(savedHolding, symbol, TransactionType.BUY, request.quantity(), marketPrice);
@@ -98,6 +109,11 @@ public class PortfolioService {
             holding.setActive(false);
             holding.setAverageBuyPrice(BigDecimal.ZERO.setScale(MONEY_SCALE, RoundingMode.HALF_UP));
         }
+
+        User user = getUserByEmail(userEmail);
+        BigDecimal earnings = request.quantity().multiply(marketPrice);
+        user.setCashBalance(scale(user.getCashBalance().add(earnings)));
+        userRepository.save(user);
 
         Portfolio savedHolding = portfolioRepository.save(holding);
         saveTransaction(savedHolding, symbol, TransactionType.SELL, request.quantity(), marketPrice);
@@ -126,8 +142,10 @@ public class PortfolioService {
                 .toList();
 
         PortfolioValuationTotals totals = portfolioRepository.calculateValuationTotals(userEmail, normalizedSymbol);
+        User user = getUserByEmail(userEmail);
 
         return new PortfolioValuationResponse(
+                scale(user.getCashBalance()),
                 scale(getTotalPortfolioValue(totals)),
                 scale(getTotalProfitLoss(totals)),
                 holdingsPage.getNumber(),

@@ -2,6 +2,7 @@ package com.stock.stockbackend.controller;
 
 import com.stock.stockbackend.dto.StockHistoryPointResponse;
 import com.stock.stockbackend.dto.StockPriceResponse;
+import com.stock.stockbackend.dto.StockSearchResponse;
 import java.util.List;
 import com.stock.stockbackend.service.StockPriceService;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +19,11 @@ import org.springframework.web.bind.annotation.RestController;
 public class StockController {
 
     private final StockPriceService stockPriceService;
+
+    @GetMapping("/search")
+    public ResponseEntity<StockSearchResponse> searchStocks(@RequestParam String q) {
+        return ResponseEntity.ok(stockPriceService.searchSymbols(q));
+    }
 
     @GetMapping("/{symbol}")
     public ResponseEntity<StockPriceResponse> getStockPrice(@PathVariable String symbol) {

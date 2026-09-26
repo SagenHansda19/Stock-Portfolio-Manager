@@ -1,5 +1,6 @@
 package com.stock.stockbackend.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -69,6 +70,7 @@ public class Portfolio extends BaseEntity {
     @Column(nullable = false)
     private boolean active = true;
 
+    @JsonIgnore
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(
@@ -78,6 +80,7 @@ public class Portfolio extends BaseEntity {
     )
     private User user;
 
+    @JsonIgnore
     @OneToMany(mappedBy = "portfolio")
     private List<Transaction> transactions = new ArrayList<>();
 }

@@ -1,6 +1,7 @@
 package com.stock.stockbackend.service;
 
 import com.stock.stockbackend.dto.FinnhubQuoteResponse;
+import com.stock.stockbackend.dto.StockSearchResponse;
 import com.stock.stockbackend.dto.TwelveDataTimeSeriesResponse;
 import com.stock.stockbackend.enums.HistoricalRange;
 import com.stock.stockbackend.exception.StockApiException;
@@ -108,6 +109,39 @@ public class StockApiService {
             throw exception;
         } catch (RestClientException exception) {
             log.error("Twelve Data request failed for symbol={} range={}", symbol, range.getValue(), exception);
+            throw new StockApiException("Stock API is currently unavailable", exception);
+        }
+    }
+
+    public StockSearchResponse searchSymbols(String query) {
+        try {
+            log.info("Searching stock symbols from Finnhub for query={}", query);
+
+            return finnhubRestClient
+                    .get()
+                    .uri(uriBuilder -> uriBuilder
+                            .path("/search")
+                            .queryParam("q", query)
+                            .build()
+                    )
+                    .retrieve()
+                    .onStatus(status -> status.value() == 429, (request, response) -> {
+                        log.warn("Finnhub rate limit reached while searching query={}", query);
+                        throw new StockApiRateLimitException("Stock API rate limit exceeded. Please try again later.");
+                    })
+                    .onStatus(HttpStatusCode::isError, (request, response) -> {
+                        log.warn(
+                                "Finnhub returned status={} while searching query={}",
+                                response.getStatusCode(),
+                                query
+                        );
+                        throw new StockApiException("Unable to search stocks from external API");
+                    })
+                    .body(StockSearchResponse.class);
+        } catch (StockApiException | StockApiRateLimitException exception) {
+            throw exception;
+        } catch (RestClientException exception) {
+            log.error("Finnhub search request failed for query={}", query, exception);
             throw new StockApiException("Stock API is currently unavailable", exception);
         }
     }
