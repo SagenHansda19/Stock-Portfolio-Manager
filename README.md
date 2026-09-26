@@ -1,9 +1,6 @@
 # StockVerse 📈
 
 > An enterprise-grade, high-concurrency stock trading simulator and quantitative portfolio intelligence platform built for zero-lock transactional consistency and sub-millisecond market execution.
-
-![Architecture Diagram](./stockverse-share-card.png)
-
 ---
 
 ## 🛠️ The Tech Stack

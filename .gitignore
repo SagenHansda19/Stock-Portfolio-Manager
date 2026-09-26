@@ -48,5 +48,10 @@ multi-user-test.js
 # Legacy Documentation
 Stock-Portfolio-Manager-Interview-Guide.*
 
-# Archify Visual-Check Sidecars & Verification Screenshots
+# Archify Artifacts & Verification Sidecars
 *.visual-check.*
+stockverse-runtime-architecture.*
+# stockverse-share-card.png
+
+# Local Deep Dive Documentation
+STOCKVERSE_DEEP_DIVE.*
