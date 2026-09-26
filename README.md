@@ -1,6 +1,9 @@
 # StockVerse 📈
 
 > An enterprise-grade, high-concurrency stock trading simulator and quantitative portfolio intelligence platform built for zero-lock transactional consistency and sub-millisecond market execution.
+
+![Architecture Diagram](./stockverse-share-card.png)
+
 ---
 
 ## 🛠️ The Tech Stack
@@ -123,9 +126,3 @@ npm install
 npm run dev
 ```
 *The React trading console will launch on `http://localhost:5173`.*
-
----
-
-## 👨‍💻 Author & Attribution
-
-Developed by Sagen Hansda (UID: 23BCS12396)
