@@ -38,3 +38,15 @@ pnpm-debug.log*
 # Test and coverage artifacts
 coverage/
 .nyc_output/
+
+# Scratch Test Payloads & Load Test Scripts
+test_body*.json
+cache-test.js
+load_test.js
+multi-user-test.js
+
+# Legacy Documentation
+Stock-Portfolio-Manager-Interview-Guide.*
+
+# Archify Visual-Check Sidecars & Verification Screenshots
+*.visual-check.*
