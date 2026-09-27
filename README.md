@@ -2,6 +2,8 @@
 
 > An enterprise-grade, high-concurrency stock trading simulator and quantitative portfolio intelligence platform built for zero-lock transactional consistency and sub-millisecond market execution.
 
+[![Live Demo](https://img.shields.io/badge/Live_Demo-Render-46E3B7?style=for-the-badge&logo=render&logoColor=white)](https://stock-portfolio-manager-gt6i.onrender.com/)
+
 ![Architecture Diagram](./stockverse-share-card.png)
 
 ---

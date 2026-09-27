@@ -1,0 +1,19 @@
+name: Production Deployment
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy-status:
+    name: Register Render Deployment
+    runs-on: ubuntu-latest
+    environment:
+      name: Production
+      url: https://stock-portfolio-manager-gt6i.onrender.com/
+    steps:
+      - name: Log Live Deployment URL
+        run: |
+          echo "StockVerse is deployed and live at: https://stock-portfolio-manager-gt6i.onrender.com/"
