@@ -81,6 +81,45 @@ class CacheConfigTest {
     }
 
     @Test
+    void redisConnectionFactory_WithRedisUrl_CreatesFactory() {
+        RedisConnectionFactory factory = cacheConfig.redisConnectionFactory(
+                "redis://default:mysecret@valkey.render.internal:6379",
+                "localhost",
+                6379,
+                null,
+                null,
+                false
+        );
+        assertNotNull(factory);
+    }
+
+    @Test
+    void redisConnectionFactory_WithHostAndPortAndCredentials_CreatesFactory() {
+        RedisConnectionFactory factory = cacheConfig.redisConnectionFactory(
+                null,
+                "render-valkey-host",
+                6379,
+                "renderSecretPass",
+                "default",
+                false
+        );
+        assertNotNull(factory);
+    }
+
+    @Test
+    void redisConnectionFactory_WithSslEnabled_CreatesFactory() {
+        RedisConnectionFactory factory = cacheConfig.redisConnectionFactory(
+                null,
+                "render-valkey-host",
+                6380,
+                "renderSecretPass",
+                "default",
+                true
+        );
+        assertNotNull(factory);
+    }
+
+    @Test
     void errorHandler_HandlesErrorsGracefullyWithoutThrowing() {
         CacheErrorHandler errorHandler = cacheConfig.errorHandler();
         assertNotNull(errorHandler);

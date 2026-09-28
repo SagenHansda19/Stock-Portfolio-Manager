@@ -14,7 +14,13 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.cache.RedisCacheConfiguration;
 import org.springframework.data.redis.cache.RedisCacheManager;
 import org.springframework.data.redis.cache.RedisCacheWriter;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.connection.RedisConfiguration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
+import org.springframework.data.redis.connection.RedisPassword;
+import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
+import org.springframework.data.redis.connection.lettuce.LettuceClientConfiguration;
+import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
 import org.springframework.data.redis.serializer.RedisSerializationContext;
 import org.springframework.data.redis.serializer.RedisSerializer;
 
@@ -29,6 +35,45 @@ public class CacheConfig implements CachingConfigurer {
     public static final Duration DEFAULT_CACHE_TTL = Duration.ofMinutes(15);
     public static final Duration INTRADAY_CACHE_TTL = Duration.ofSeconds(60);
     public static final Duration HISTORICAL_CACHE_TTL = Duration.ofHours(1);
+
+    @Bean
+    public RedisConnectionFactory redisConnectionFactory(
+            @Value("${REDIS_URL:${spring.data.redis.url:}}") String redisUrl,
+            @Value("${spring.data.redis.host:localhost}") String host,
+            @Value("${spring.data.redis.port:6379}") int port,
+            @Value("${spring.data.redis.password:}") String password,
+            @Value("${spring.data.redis.username:}") String username,
+            @Value("${spring.data.redis.ssl.enabled:false}") boolean sslEnabled
+    ) {
+        String effectiveUrl = (redisUrl != null && !redisUrl.isBlank()) ? redisUrl.trim() : null;
+        if (effectiveUrl == null) {
+            String envUrl = System.getenv("REDIS_URL");
+            if (envUrl != null && !envUrl.isBlank()) {
+                effectiveUrl = envUrl.trim();
+            }
+        }
+
+        if (effectiveUrl != null) {
+            log.info("Configuring Redis/Valkey connection using unified REDIS_URL");
+            RedisConfiguration redisConfig = LettuceConnectionFactory.createRedisConfiguration(effectiveUrl);
+            return new LettuceConnectionFactory(redisConfig);
+        }
+
+        log.info("Configuring Redis/Valkey connection to host [{}:{}] (SSL: {})", host, port, sslEnabled);
+        RedisStandaloneConfiguration standaloneConfig = new RedisStandaloneConfiguration(host, port);
+        if (password != null && !password.isBlank()) {
+            standaloneConfig.setPassword(RedisPassword.of(password.trim()));
+        }
+        if (username != null && !username.isBlank()) {
+            standaloneConfig.setUsername(username.trim());
+        }
+
+        LettuceClientConfiguration clientConfig = (sslEnabled || port == 6380)
+                ? LettuceClientConfiguration.builder().useSsl().build()
+                : LettuceClientConfiguration.builder().build();
+
+        return new LettuceConnectionFactory(standaloneConfig, clientConfig);
+    }
 
     @Bean
     public RedisCacheConfiguration cacheConfiguration() {
