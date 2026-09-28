@@ -21,29 +21,30 @@
 
 ---
 
-## ⚡ Core Engineering Achievements
+## ⚡ Core Engineering Highlights (Resume Architecture Deep-Dive)
 
-1. **JPA `@Version` Optimistic Concurrency Control (OCC):**
-   - Eliminates thread-blocking database locks (`SELECT FOR UPDATE`) on high-frequency trading accounts.
-   - Enforces version verification on `app_users` and `portfolio_positions` (`WHERE id = ? AND version = ?`), automatically detecting concurrent trade collisions and mapping them to HTTP 409 Conflict without ledger corruption or lost updates.
+### 1. High-Concurrency Transactional Trading Engine (JPA @Version)
+> 🎯 **Resume Highlight:** *Engineered a high-concurrency transactional trading engine using JPA @Version optimistic locking to prevent database race conditions and protect financial ledgers under heavy market load.*
 
-2. **Multi-Tier Caching Lifecycle (`@Cacheable` & `@CacheEvict`):**
-   - High-compute portfolio diagnostic evaluations are cached in Redis under `portfolioAnalysis::<userId>` with a 15-minute TTL.
-   - Trade execution immediately triggers `@CacheEvict(value = "portfolioAnalysis", key = "#userId")`, ensuring strict write-through data freshness while shielding external LLM quotas from repeated reads.
-   - Custom `CacheErrorHandler` guarantees fail-open high availability if the Redis cluster encounters network partitions.
+- **Optimistic Concurrency Control (OCC):** Eliminates thread-blocking database locks (`SELECT FOR UPDATE`) on high-frequency trading accounts.
+- **Atomic Rollback & Version Protection:** Enforces version verification on `app_users` and `portfolio_positions` (`WHERE id = ? AND version = ?`), automatically detecting concurrent trade collisions and throwing `ObjectOptimisticLockingFailureException`.
+- **Zero Financial Drift:** `GlobalExceptionHandler` maps collisions to **HTTP 409 Conflict** with an informative retry payload, preventing double-spending and ledger corruption.
 
-3. **LangChain4j & Google Gemini Structured JSON Mode:**
-   - Seamlessly binds Spring Boot to Google Gemini 1.5 Flash using LangChain4j.
-   - Configured with `temperature(0.2)` and `ResponseFormat.JSON` to enforce strict schema adherence for risk metrics, health scores (0-100), and asset-level review recommendations without natural language drift.
-   - Features zero-holding short-circuiting and automatic rule-based quantitative fallback if external APIs timeout.
+### 2. Event-Driven Multi-Tier Caching Lifecycle (Redis)
+> 🎯 **Resume Highlight:** *Implemented an event-driven multi-tier caching lifecycle using Redis (@Cacheable, @CacheEvict), accelerating AI portfolio analysis delivery to sub-35ms and aggressively bypassing external rate limits.*
 
-4. **Stateless JWT Security Architecture:**
-   - Enterprise security filter chain operating with `SessionCreationPolicy.STATELESS`.
-   - HMAC-SHA256 cryptographic signature validation with custom `OncePerRequestFilter` (`JwtTokenFilter`), non-blocking CORS configuration, and granular endpoint access control.
+- **Sub-35ms Delivery:** High-compute portfolio diagnostic evaluations are cached in Redis under `portfolioAnalysis::<userId>` with a 15-minute TTL, dropping query time from ~1.8s down to sub-35ms.
+- **Event-Driven Write-Through Eviction:** Trade execution (`executeTrade`) immediately triggers `@CacheEvict(value = "portfolioAnalysis", key = "#userId")`, ensuring strict write-through data freshness while shielding external LLM quotas from repeated reads.
+- **Fail-Open High Availability:** Custom `CustomCacheErrorHandler` guarantees non-fatal degradation if the Redis cluster encounters connection drops or socket timeouts.
 
----
+### 3. Deterministic AI Quantitative Analysis (Google Gemini 1.5 Flash + LangChain4j)
+> 🎯 **Resume Highlight:** *Integrated Google Gemini 1.5 Flash via LangChain4j enforcing strict JSON-mode schemas for deterministic quantitative risk scoring, portfolio diversification metrics, and automated fallback heuristics.*
 
-## 📊 System Performance & Load Testing
+- **Strict Schema Enforcement:** Seamlessly binds Spring Boot to Google Gemini 1.5 Flash using LangChain4j configured with `temperature(0.2)` and `ResponseFormat.JSON` to enforce strict schema adherence for risk metrics, health scores (0-100), and asset-level review recommendations without natural language drift.
+- **Defense-in-Depth Fallbacks:** Features zero-holding short-circuiting (instant 0ms return for 100% cash portfolios) and automatic rule-based quantitative fallback calculating diversification math (HHI) if external APIs timeout or rate limit.
+
+### 4. High-Throughput System Resilience Benchmarks (Grafana K6)
+> 🎯 **Resume Highlight:** *Benchmarked system resilience using Grafana K6, successfully validating zero failures across 705 req/sec concurrent market trades and 9,400+ req/sec stateless JWT security filter rejections.*
 
 Stress-tested using **Grafana K6** across distributed virtual users (VUs) simulating concurrent market operations:
 

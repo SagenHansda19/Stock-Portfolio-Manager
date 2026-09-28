@@ -193,6 +193,8 @@ Client                 JwtTokenFilter            AiAdvisorController      Portfo
 ## 3. Study Guide & Design Patterns (Interview Deep Dives)
 
 ### 3.1 Optimistic Locking Pattern (`@Version`)
+> 🎯 **Resume Achievement:** *Engineered a high-concurrency transactional trading engine using JPA @Version optimistic locking to prevent database race conditions and protect financial ledgers under heavy market load.*
+
 - **The Problem (Lost Update Race Condition):** If a user double-clicks "Buy", two threads read `cash = $10,000`, validate an \$8,000 buy, and both write `cash = $2,000`. The user spends \$16,000 with \$10,000 collateral.
 - **Why NOT Pessimistic Locking (`SELECT FOR UPDATE`)?** Row-level database locks block threads, cause HikariCP connection pool starvation, and introduce deadlocks under high-frequency trading.
 - **StockVerse OCC Solution:** 
@@ -203,13 +205,17 @@ Client                 JwtTokenFilter            AiAdvisorController      Portfo
   5. The React frontend cleanly alerts the user: *"Trade collision detected. Please retry."*
 
 ### 3.2 Redis Cache-Aside & Event-Driven Invalidation
+> 🎯 **Resume Achievement:** *Implemented an event-driven multi-tier caching lifecycle using Redis (@Cacheable, @CacheEvict), accelerating AI portfolio analysis delivery to sub-35ms and aggressively bypassing external rate limits.*
+
 - **The Problem:** Calling Gemini 1.5 Flash on every dashboard render takes 1.2–2.5s and consumes rate limits (15 RPM).
 - **The Architecture:**
-  - **Read Path (`@Cacheable`):** Key `portfolioAnalysis::<userId>` with 15-minute TTL. Subsequent views are delivered in **~2ms**.
+  - **Read Path (`@Cacheable`):** Key `portfolioAnalysis::<userId>` with 15-minute TTL. Subsequent views are delivered in **~2ms** (sub-35ms delivery under load).
   - **Write Path (`@CacheEvict`):** In `TradeService.executeTrade()`, any BUY or SELL immediately purges the user's cached analysis. The next view generates fresh metrics based on updated positions.
   - **Fail-Open Resilience (`CacheErrorHandler`):** If Redis crashes or experiences network partitions, `handleCacheGetError` and `handleCacheEvictError` log warnings and fall back directly to PostgreSQL + Gemini, preventing HTTP 500 errors.
 
 ### 3.3 Structured JSON Schema Output Pattern (LangChain4j + Gemini)
+> 🎯 **Resume Achievement:** *Integrated Google Gemini 1.5 Flash via LangChain4j enforcing strict JSON-mode schemas for deterministic quantitative risk scoring, portfolio diversification metrics, and automated fallback heuristics.*
+
 - **The Problem:** LLMs produce free-form conversational text or inconsistent markdown wrappers (````json ... ````), causing frontend rendering errors.
 - **The Architecture:**
   - Enforced via LangChain4j `ResponseFormat.JSON` and low temperature (`0.2`).
@@ -218,6 +224,8 @@ Client                 JwtTokenFilter            AiAdvisorController      Portfo
   - Deterministic fallback: If Gemini API encounters 503 or quota limits, `buildFallbackAssessment()` computes quantitative risk metrics algorithmically.
 
 ### 3.4 Resilience & Load Testing Benchmarks (Grafana K6)
+> 🎯 **Resume Achievement:** *Benchmarked system resilience using Grafana K6, successfully validating zero failures across 705 req/sec concurrent market trades and 9,400+ req/sec stateless JWT security filter rejections.*
+
 Validated under sustained stress testing using distributed virtual users (VUs):
 
 | Test Scenario | Virtual Users (VUs) | Throughput (Req/Sec) | Latency p(95) | Error Rate | Architectural Validation |

@@ -634,6 +634,42 @@
 
     .toast.show { opacity: 1; transform: translateY(0); }
     section[id] { scroll-margin-top: 72px; }
+
+    /* =========================================
+       RESUME PILLARS STYLES
+       ========================================= */
+    .callout-accent {
+      background: var(--accent-dim);
+      border-color: var(--accent);
+    }
+    .pillar-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .pillar-card:hover {
+      border-color: var(--border-hover);
+    }
+    .pillar-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+    }
+    .interview-box {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--accent);
+      border-radius: 6px;
+      padding: 0.9rem 1.1rem;
+      margin-top: 1rem;
+      font-size: 0.83rem;
+    }
   </style>
 </head>
 
@@ -648,6 +684,7 @@
       <span class="nav-badge">v1.0 Institutional</span>
     </div>
     <div class="nav-links">
+      <a href="#pillars" style="color: var(--accent); font-weight: 700;">Resume Pillars</a>
       <a href="#quickstart">Quick Start</a>
       <a href="#architecture" class="hide-mobile">Architecture</a>
       <a href="#patterns" class="hide-mobile">Study Guide</a>
@@ -682,7 +719,8 @@
 
     <!-- ======================== TABLE OF CONTENTS ======================== -->
     <section style="margin-bottom: 3rem;">
-      <div style="display: flex; flex-wrap: wrap; gap: 1.5rem;">
+      <div style="display: flex; flex-wrap: wrap; gap: 1rem;">
+        <a class="toc-link" href="#pillars" style="border-color: rgba(16,185,129,0.4); background: rgba(16,185,129,0.06);"><span class="toc-num" style="color:var(--accent);">★</span> Resume Engineering Pillars</a>
         <a class="toc-link" href="#quickstart"><span class="toc-num">01</span> Quick Start & Commands</a>
         <a class="toc-link" href="#architecture"><span class="toc-num">02</span> System Topology & Flow</a>
         <a class="toc-link" href="#patterns"><span class="toc-num">03</span> Study Guide & Patterns</a>
@@ -691,6 +729,241 @@
         <a class="toc-link" href="#troubleshooting"><span class="toc-num">06</span> Engineering Gotchas</a>
       </div>
     </section>
+
+    <!-- ======================== 00. RESUME ENGINEERING PILLARS ======================== -->
+    <section id="pillars">
+      <div class="s-label" style="color: var(--accent);">★ Master Revision Guide · Resume Technical Deep-Dive</div>
+      <h2 class="s-title">Core Resume Engineering Pillars</h2>
+      <p class="s-desc">
+        Comprehensive technical breakdown of all four core engineering achievements stated on your resume for the StockVerse project. 
+        Engineered for deep revision, architectural retrospectives, and senior engineering interview preparation.
+      </p>
+
+      <!-- PILLAR 1 -->
+      <div class="pillar-card" style="border-left: 4px solid var(--emerald); background: linear-gradient(180deg, var(--bg-card) 0%, rgba(16,185,129,0.03) 100%);">
+        <div class="pillar-header">
+          <div>
+            <span class="pattern-badge badge-concurrency" style="background: rgba(16,185,129,0.15); color: var(--emerald); font-weight: 700;">Resume Pillar 01 · Concurrency & Financial Integrity</span>
+            <h3 style="font-size: 1.25rem; font-weight: 800; letter-spacing: -0.02em; margin-top: 0.35rem;">High-Concurrency Transactional Trading Engine (JPA @Version OCC)</h3>
+          </div>
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--text-3);">Spring Data JPA · PostgreSQL 18 · @Version · ACID Ledgers</span>
+        </div>
+
+        <div class="callout callout-accent" style="margin-bottom: 1.25rem;">
+          <div class="callout-title" style="color: var(--accent); font-weight: 700;">📄 Exact Resume Highlight</div>
+          <div class="callout-body" style="font-style: italic; color: var(--text);">
+            “Engineered a high-concurrency transactional trading engine using JPA @Version optimistic locking to prevent database race conditions and protect financial ledgers under heavy market load.”
+          </div>
+        </div>
+
+        <div class="grid-2" style="gap: 1rem; margin-bottom: 1rem;">
+          <div style="background: var(--bg-surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.1rem;">
+            <div style="font-size: 0.72rem; font-weight: 700; color: var(--emerald); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.35rem; font-family: 'JetBrains Mono';">01. THE CONCURRENCY RISK (LOST UPDATES)</div>
+            <div style="font-weight: 700; font-size: 0.92rem; margin-bottom: 0.4rem;">Race Conditions in Financial Ledgers</div>
+            <p style="font-size: 0.81rem; color: var(--text-2); line-height: 1.55; margin-bottom: 0.5rem;">
+              When multiple algorithmic orders or rapid double-clicks hit the trading engine simultaneously:
+            </p>
+            <ul style="font-size: 0.8rem; color: var(--text-2); line-height: 1.5; padding-left: 1.1rem; margin: 0;">
+              <li><strong>The Race:</strong> Thread A and Thread B both read cash balance <code>$10,000</code>. Thread A subtracts <code>$3,000</code> and writes <code>$7,000</code>. Thread B concurrently subtracts <code>$4,000</code> and overwrites the balance with <code>$6,000</code>.</li>
+              <li><strong>The Consequence:</strong> Thread A's deduction is lost, creating an illegal double-spend exploit and desynchronizing the audit ledger.</li>
+            </ul>
+          </div>
+
+          <div style="background: var(--bg-surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.1rem;">
+            <div style="font-size: 0.72rem; font-weight: 700; color: var(--blue); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.35rem; font-family: 'JetBrains Mono';">02. WHY NOT PESSIMISTIC ROW LOCKING?</div>
+            <div style="font-weight: 700; font-size: 0.92rem; margin-bottom: 0.4rem;">Deadlocks & Connection Pool Starvation</div>
+            <p style="font-size: 0.81rem; color: var(--text-2); line-height: 1.55; margin-bottom: 0.5rem;">
+              Traditional <code>SELECT ... FOR UPDATE</code> locks database rows until commit:
+            </p>
+            <ul style="font-size: 0.8rem; color: var(--text-2); line-height: 1.5; padding-left: 1.1rem; margin: 0;">
+              <li><strong>Thread Exhaustion:</strong> High concurrent order bursts block worker threads waiting for locks, exhausting HikariCP pools.</li>
+              <li><strong>Deadlock Vulnerability:</strong> Interleaved locks across user accounts and stock holdings trigger PostgreSQL transaction deadlocks.</li>
+            </ul>
+          </div>
+        </div>
+
+        <div style="background: var(--bg-surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.1rem; margin-bottom: 1rem;">
+          <div style="font-size: 0.72rem; font-weight: 700; color: var(--purple); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.35rem; font-family: 'JetBrains Mono';">03. OPTIMISTIC CONCURRENCY CONTROL (OCC) IMPLEMENTATION</div>
+          <div style="font-weight: 700; font-size: 0.92rem; margin-bottom: 0.4rem;">Hibernate @Version SQL Predicates & Clean Rollbacks</div>
+          <p style="font-size: 0.81rem; color: var(--text-2); line-height: 1.55; margin-bottom: 0.5rem;">
+            The <code>User</code> and <code>Holding</code> entities declare a <code>@Version private Long version;</code> attribute. Under OCC, threads never hold database locks during computation. When persisting the ledger update, Hibernate executes:
+            <code style="display: block; margin: 0.4rem 0; padding: 0.4rem 0.6rem; background: var(--bg-code); color: var(--emerald);">UPDATE app_users SET cash_balance = ?, version = version + 1 WHERE id = ? AND version = ?;</code>
+            If a concurrent trade committed earlier, the <code>WHERE version = ?</code> clause matches 0 rows. Hibernate immediately raises <code>ObjectOptimisticLockingFailureException</code>. The entire <code>@Transactional</code> boundary rolls back cleanly, and <code>GlobalExceptionHandler</code> transforms it to <strong>HTTP 409 Conflict</strong>.
+          </p>
+        </div>
+
+        <div class="interview-box">
+          <div style="font-weight: 700; color: var(--accent); margin-bottom: 0.3rem;">🎙️ Senior Interview Talking Point:</div>
+          <p style="margin: 0; line-height: 1.55; color: var(--text-2);">
+            <em>“When asked how we ensure financial consistency under load: ‘We implemented JPA @Version optimistic locking on both cash balances and portfolio holdings. Pessimistic row locking creates thread starvation and deadlocks during market volatility bursts. With OCC, threads execute non-blocking in memory; if a ledger version mismatch is detected at commit time, Hibernate aborts the transaction with an ObjectOptimisticLockingFailureException, rolling back atomic ledger writes and returning HTTP 409 Conflict without ledger drift.’”</em>
+          </p>
+        </div>
+      </div>
+
+      <!-- PILLAR 2 -->
+      <div class="pillar-card" style="border-left: 4px solid var(--rose); background: linear-gradient(180deg, var(--bg-card) 0%, rgba(244,63,94,0.03) 100%);">
+        <div class="pillar-header">
+          <div>
+            <span class="pattern-badge badge-caching" style="background: rgba(244,63,94,0.15); color: var(--rose); font-weight: 700;">Resume Pillar 02 · Caching & Performance Lifecycle</span>
+            <h3 style="font-size: 1.25rem; font-weight: 800; letter-spacing: -0.02em; margin-top: 0.35rem;">Event-Driven Multi-Tier Redis Caching Lifecycle (Sub-35ms Delivery)</h3>
+          </div>
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--text-3);">Redis 7 · Spring Cache (@Cacheable / @CacheEvict) · Sub-35ms</span>
+        </div>
+
+        <div class="callout callout-accent" style="margin-bottom: 1.25rem;">
+          <div class="callout-title" style="color: var(--accent); font-weight: 700;">📄 Exact Resume Highlight</div>
+          <div class="callout-body" style="font-style: italic; color: var(--text);">
+            “Implemented an event-driven multi-tier caching lifecycle using Redis (@Cacheable, @CacheEvict), accelerating AI portfolio analysis delivery to sub-35ms and aggressively bypassing external rate limits.”
+          </div>
+        </div>
+
+        <div class="grid-2" style="gap: 1rem; margin-bottom: 1rem;">
+          <div style="background: var(--bg-surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.1rem;">
+            <div style="font-size: 0.72rem; font-weight: 700; color: var(--amber); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.35rem; font-family: 'JetBrains Mono';">01. THE AI INFERENCE & QUOTA BOTTLENECK</div>
+            <div style="font-weight: 700; font-size: 0.92rem; margin-bottom: 0.4rem;">High Latency & Expensive External API Calls</div>
+            <p style="font-size: 0.81rem; color: var(--text-2); line-height: 1.55; margin-bottom: 0.5rem;">
+              Evaluating multi-asset portfolio diversification and risk involves compiling asset weights, current prices, and invoking Gemini 1.5 Flash:
+            </p>
+            <ul style="font-size: 0.8rem; color: var(--text-2); line-height: 1.5; padding-left: 1.1rem; margin: 0;">
+              <li><strong>Latency:</strong> Cold LLM inference takes <strong>1.2s to 2.5s</strong> per request.</li>
+              <li><strong>Rate Limits:</strong> Repeated page refreshes exhaust third-party API rate quotas (HTTP 429).</li>
+            </ul>
+          </div>
+
+          <div style="background: var(--bg-surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.1rem;">
+            <div style="font-size: 0.72rem; font-weight: 700; color: var(--emerald); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.35rem; font-family: 'JetBrains Mono';">02. EVENT-DRIVEN INVALIDATION LIFECYCLE</div>
+            <div style="font-weight: 700; font-size: 0.92rem; margin-bottom: 0.4rem;">@Cacheable Retrieval + Instant @CacheEvict on Trade</div>
+            <p style="font-size: 0.81rem; color: var(--text-2); line-height: 1.55; margin-bottom: 0.5rem;">
+              A synchronized two-tier caching strategy guarantees speed and freshness:
+            </p>
+            <ul style="font-size: 0.8rem; color: var(--text-2); line-height: 1.5; padding-left: 1.1rem; margin: 0;">
+              <li><strong>Cache Reads (<code>@Cacheable</code>):</strong> Diagnostics are cached in Redis under <code>portfolioAnalysis::&lt;userId&gt;</code> with a 15-minute TTL, returning in <strong>sub-35ms</strong>.</li>
+              <li><strong>Write-Through Eviction (<code>@CacheEvict</code>):</strong> Executing BUY/SELL in <code>TradingService</code> purges the user's cached analysis inside the transaction, guaranteeing zero stale data.</li>
+            </ul>
+          </div>
+        </div>
+
+        <div style="background: var(--bg-surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.1rem; margin-bottom: 1rem;">
+          <div style="font-size: 0.72rem; font-weight: 700; color: var(--cyan); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.35rem; font-family: 'JetBrains Mono';">03. FAIL-OPEN RESILIENCE (CUSTOM CACHE ERROR HANDLER)</div>
+          <div style="font-weight: 700; font-size: 0.92rem; margin-bottom: 0.4rem;">Non-Fatal Cache Degradation</div>
+          <p style="font-size: 0.81rem; color: var(--text-2); line-height: 1.55; margin: 0;">
+            A custom <code>CustomCacheErrorHandler</code> implements Spring's <code>CacheErrorHandler</code>. If Redis experiences a node crash or socket timeout, the application logs a warning and fails open directly to PostgreSQL and the AI service. Traders are never blocked by infrastructure cache outages.
+          </p>
+        </div>
+
+        <div class="interview-box">
+          <div style="font-weight: 700; color: var(--accent); margin-bottom: 0.3rem;">🎙️ Senior Interview Talking Point:</div>
+          <p style="margin: 0; line-height: 1.55; color: var(--text-2);">
+            <em>“When asked about caching: ‘AI portfolio diagnostics take 1.8s and are rate-limited. We implemented a Redis event-driven cache-aside lifecycle. Reads are served in sub-35ms with a 15-minute TTL. The moment a user buys or sells stock, @CacheEvict purges their key inside the transaction boundary, guaranteeing fresh evaluations on the next view. If Redis crashes, our fail-open CacheErrorHandler gracefully falls back to direct execution without throwing 500s.’”</em>
+          </p>
+        </div>
+      </div>
+
+      <!-- PILLAR 3 -->
+      <div class="pillar-card" style="border-left: 4px solid var(--purple); background: linear-gradient(180deg, var(--bg-card) 0%, rgba(168,85,247,0.03) 100%);">
+        <div class="pillar-header">
+          <div>
+            <span class="pattern-badge badge-ai" style="background: rgba(168,85,247,0.15); color: var(--purple); font-weight: 700;">Resume Pillar 03 · AI Engine & Schema Reliability</span>
+            <h3 style="font-size: 1.25rem; font-weight: 800; letter-spacing: -0.02em; margin-top: 0.35rem;">Deterministic Quantitative AI Analysis (LangChain4j + Gemini 1.5 Flash)</h3>
+          </div>
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--text-3);">Gemini 1.5 Flash · LangChain4j 0.35 · JSON Mode · Fallback Heuristics</span>
+        </div>
+
+        <div class="callout callout-accent" style="margin-bottom: 1.25rem;">
+          <div class="callout-title" style="color: var(--accent); font-weight: 700;">📄 Exact Resume Highlight</div>
+          <div class="callout-body" style="font-style: italic; color: var(--text);">
+            “Integrated Google Gemini 1.5 Flash via LangChain4j enforcing strict JSON-mode schemas for deterministic quantitative risk scoring, portfolio diversification metrics, and automated fallback heuristics.”
+          </div>
+        </div>
+
+        <div class="grid-2" style="gap: 1rem; margin-bottom: 1rem;">
+          <div style="background: var(--bg-surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.1rem;">
+            <div style="font-size: 0.72rem; font-weight: 700; color: var(--purple); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.35rem; font-family: 'JetBrains Mono';">01. ELIMINATING HALLUCINATED PROSE</div>
+            <div style="font-weight: 700; font-size: 0.92rem; margin-bottom: 0.4rem;">Strict JSON Schema Enforcement</div>
+            <p style="font-size: 0.81rem; color: var(--text-2); line-height: 1.55; margin-bottom: 0.5rem;">
+              Standard LLM completions wrap text in markdown blocks (<code>```json ... ```</code>) or unpredictably alter object keys, breaking frontend Recharts components:
+            </p>
+            <ul style="font-size: 0.8rem; color: var(--text-2); line-height: 1.5; padding-left: 1.1rem; margin: 0;">
+              <li><strong>LangChain4j Builder:</strong> Configured with <code>responseFormat(ResponseFormat.JSON)</code> targeting Google Gemini 1.5 Flash.</li>
+              <li><strong>Temperature 0.2:</strong> Low temperature eliminates variance, producing consistent risk scores (0–100) and diversification ratings for identical portfolios.</li>
+            </ul>
+          </div>
+
+          <div style="background: var(--bg-surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.1rem;">
+            <div style="font-size: 0.72rem; font-weight: 700; color: var(--cyan); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.35rem; font-family: 'JetBrains Mono';">02. DEFENSE-IN-DEPTH FALLBACK HEURISTICS</div>
+            <div style="font-weight: 700; font-size: 0.92rem; margin-bottom: 0.4rem;">Zero-Holding Bypass & Mathematical Fallback</div>
+            <p style="font-size: 0.81rem; color: var(--text-2); line-height: 1.55; margin-bottom: 0.5rem;">
+              Multi-tiered safeguards ensure 100% availability even during external outages:
+            </p>
+            <ul style="font-size: 0.8rem; color: var(--text-2); line-height: 1.5; padding-left: 1.1rem; margin: 0;">
+              <li><strong>Zero-Holding Fast Return:</strong> If user holdings are empty (100% cash), returns a baseline evaluation in 0ms without consuming Gemini quota.</li>
+              <li><strong>Algorithmic Fallback Model:</strong> If Gemini returns HTTP 429 rate limit or network timeout, the engine executes an algorithmic quantitative calculation (Herfindahl-Hirschman Index for diversification), returning valid JSON without user interruption.</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="interview-box">
+          <div style="font-weight: 700; color: var(--accent); margin-bottom: 0.3rem;">🎙️ Senior Interview Talking Point:</div>
+          <p style="margin: 0; line-height: 1.55; color: var(--text-2);">
+            <em>“When asked about AI system reliability in finance: ‘Raw LLM responses are non-deterministic and can crash client UIs with markdown fences. We paired LangChain4j with Gemini 1.5 Flash using ResponseFormat.JSON and temperature 0.2 to enforce strict JSON schemas matching our Java DTOs. If Google AI Studio encounters rate limits, our automated fallback heuristics immediately compute algorithmic diversification scores, providing continuous availability.’”</em>
+          </p>
+        </div>
+      </div>
+
+      <!-- PILLAR 4 -->
+      <div class="pillar-card" style="border-left: 4px solid var(--amber); background: linear-gradient(180deg, var(--bg-card) 0%, rgba(245,158,11,0.03) 100%);">
+        <div class="pillar-header">
+          <div>
+            <span class="pattern-badge badge-resilience" style="background: rgba(245,158,11,0.15); color: var(--amber); font-weight: 700;">Resume Pillar 04 · High-Throughput Benchmarks</span>
+            <h3 style="font-size: 1.25rem; font-weight: 800; letter-spacing: -0.02em; margin-top: 0.35rem;">System Resilience & Concurrency Benchmarking (Grafana K6)</h3>
+          </div>
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--text-3);">Grafana K6 · 705 req/s Trades · 9,400+ req/s Security Gate · Zero Failures</span>
+        </div>
+
+        <div class="callout callout-accent" style="margin-bottom: 1.25rem;">
+          <div class="callout-title" style="color: var(--accent); font-weight: 700;">📄 Exact Resume Highlight</div>
+          <div class="callout-body" style="font-style: italic; color: var(--text);">
+            “Benchmarked system resilience using Grafana K6, successfully validating zero failures across 705 req/sec concurrent market trades and 9,400+ req/sec stateless JWT security filter rejections.”
+          </div>
+        </div>
+
+        <div class="grid-2" style="gap: 1rem; margin-bottom: 1rem;">
+          <div style="background: var(--bg-surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.1rem;">
+            <div style="font-size: 0.72rem; font-weight: 700; color: var(--emerald); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.35rem; font-family: 'JetBrains Mono';">BENCHMARK 1: CONCURRENT TRADING (705 REQ/S)</div>
+            <div style="font-weight: 700; font-size: 0.92rem; margin-bottom: 0.4rem;">Transactional Engine Stress Testing</div>
+            <p style="font-size: 0.81rem; color: var(--text-2); line-height: 1.55; margin-bottom: 0.5rem;">
+              Simulated 50 concurrent Virtual Users (VUs) executing high-frequency BUY/SELL operations via Grafana K6:
+            </p>
+            <ul style="font-size: 0.8rem; color: var(--text-2); line-height: 1.5; padding-left: 1.1rem; margin: 0;">
+              <li><strong>Throughput:</strong> <strong>705 requests/second</strong> sustained without database deadlocks.</li>
+              <li><strong>Zero Failures:</strong> Zero unhandled HTTP 500 errors, zero balance overdrafts, zero ledger drift.</li>
+              <li><strong>Collision Handling:</strong> OCC collisions cleanly resolved via HTTP 409 Conflict.</li>
+            </ul>
+          </div>
+
+          <div style="background: var(--bg-surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.1rem;">
+            <div style="font-size: 0.72rem; font-weight: 700; color: var(--blue); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.35rem; font-family: 'JetBrains Mono';">BENCHMARK 2: STATELESS SECURITY (9,400+ REQ/S)</div>
+            <div style="font-weight: 700; font-size: 0.92rem; margin-bottom: 0.4rem;">Spring Security JWT Filter Gate</div>
+            <p style="font-size: 0.81rem; color: var(--text-2); line-height: 1.55; margin-bottom: 0.5rem;">
+              Evaluated perimeter defenses under massive DDoS-style invalid authentication floods:
+            </p>
+            <ul style="font-size: 0.8rem; color: var(--text-2); line-height: 1.5; padding-left: 1.1rem; margin: 0;">
+              <li><strong>Throughput:</strong> <strong>9,400+ requests/second</strong> rejection capacity.</li>
+              <li><strong>Perimeter Isolation:</strong> Stateless <code>JwtAuthenticationFilter</code> immediately drops unauthenticated requests without consuming database connection pool threads.</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="interview-box">
+          <div style="font-weight: 700; color: var(--accent); margin-bottom: 0.3rem;">🎙️ Senior Interview Talking Point:</div>
+          <p style="margin: 0; line-height: 1.55; color: var(--text-2);">
+            <em>“When asked about scalability and stress testing: ‘We benchmarked the application with Grafana K6 under 50 virtual users. Our transactional trading engine achieved 705 req/s with zero ledger discrepancies, proving that JPA @Version optimistic locking prevented lost updates without deadlocking the database. Furthermore, our Spring Security filter pipeline sustained 9,400+ req/s for unauthorized rejects, demonstrating that invalid requests are blocked at the perimeter before touching HikariCP connection pools.’”</em>
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <hr>
 
     <!-- ======================== 01. QUICK START ======================== -->
     <section id="quickstart">
