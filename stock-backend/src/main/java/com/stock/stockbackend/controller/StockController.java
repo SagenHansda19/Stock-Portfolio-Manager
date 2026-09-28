@@ -33,8 +33,10 @@ public class StockController {
     @GetMapping("/history/{symbol}")
     public ResponseEntity<List<StockHistoryPointResponse>> getStockHistory(
             @PathVariable String symbol,
-            @RequestParam(defaultValue = "1D") String range
+            @RequestParam(name = "range", defaultValue = "1D") String range,
+            @RequestParam(name = "interval", required = false) String interval
     ) {
-        return ResponseEntity.ok(stockPriceService.getHistoricalPrices(symbol, range));
+        String effectiveInterval = (interval != null && !interval.isBlank()) ? interval : range;
+        return ResponseEntity.ok(stockPriceService.getHistoricalPrices(symbol, effectiveInterval));
     }
 }

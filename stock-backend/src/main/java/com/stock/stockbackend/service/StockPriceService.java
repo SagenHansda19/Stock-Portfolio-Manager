@@ -29,6 +29,7 @@ import com.stock.stockbackend.entity.StockHistoryCache;
 import com.stock.stockbackend.repository.StockHistoryCacheRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -81,13 +82,18 @@ public class StockPriceService {
                 .toList();
     }
 
+    @Cacheable(
+            value = "stockHistory",
+            key = "(#symbol != null ? #symbol.trim().toUpperCase() : '') + '_' + (#interval != null && !#interval.trim().isEmpty() ? #interval.trim().toUpperCase() : '1D')",
+            unless = "#result == null || #result.isEmpty()"
+    )
     @Transactional
-    public List<StockHistoryPointResponse> getHistoricalPrices(String rawSymbol, String rawRange) {
-        String symbol = normalizeSymbol(rawSymbol);
-        HistoricalRange range = HistoricalRange.fromValue(rawRange);
+    public List<StockHistoryPointResponse> getHistoricalPrices(String symbol, String interval) {
+        String normalizedSymbol = normalizeSymbol(symbol);
+        HistoricalRange range = HistoricalRange.fromValue(interval);
 
         Optional<StockHistoryCache> optionalCache = stockHistoryCacheRepository
-                .findByStockSymbolAndTimeRange(symbol, range.getValue());
+                .findByStockSymbolAndTimeRange(normalizedSymbol, range.getValue());
 
         if (optionalCache.isPresent()) {
             StockHistoryCache cache = optionalCache.get();
@@ -99,24 +105,24 @@ public class StockPriceService {
                             new TypeReference<List<StockHistoryPointResponse>>() {}
                     );
                 } catch (JsonProcessingException e) {
-                    log.warn("Failed to deserialize stock history cache for symbol={}, range={}. Fetching fresh.", symbol, range.getValue(), e);
+                    log.warn("Failed to deserialize stock history cache for symbol={}, range={}. Fetching fresh.", normalizedSymbol, range.getValue(), e);
                 }
             }
         }
 
-        TwelveDataTimeSeriesResponse response = stockApiService.fetchTimeSeries(symbol, range);
-        List<StockHistoryPointResponse> points = mapHistoryPoints(symbol, range, response);
+        TwelveDataTimeSeriesResponse response = stockApiService.fetchTimeSeries(normalizedSymbol, range);
+        List<StockHistoryPointResponse> points = mapHistoryPoints(normalizedSymbol, range, response);
 
         try {
             String json = objectMapper.writeValueAsString(points);
             StockHistoryCache cache = optionalCache.orElseGet(StockHistoryCache::new);
-            cache.setStockSymbol(symbol);
+            cache.setStockSymbol(normalizedSymbol);
             cache.setTimeRange(range.getValue());
             cache.setDataJson(json);
             cache.setUpdatedAt(Instant.now());
             stockHistoryCacheRepository.save(cache);
         } catch (JsonProcessingException e) {
-            log.error("Failed to serialize stock history cache for symbol={}, range={}", symbol, range.getValue(), e);
+            log.error("Failed to serialize stock history cache for symbol={}, range={}", normalizedSymbol, range.getValue(), e);
         }
 
         return points;
