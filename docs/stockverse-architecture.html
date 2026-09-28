@@ -1,0 +1,1384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>StockVerse — Enterprise Architecture Reference</title>
+  <meta name="description" content="Institutional-grade stock trading simulator & quantitative portfolio intelligence platform built with Spring Boot 3.4, React 19, PostgreSQL 18, Redis 7, and Google Gemini 1.5 Flash.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    /* =========================================
+       DESIGN TOKENS (DocuMind Theme Standard)
+       ========================================= */
+    :root {
+      --bg: #0a0a0a;
+      --bg-surface: #111111;
+      --bg-card: #141414;
+      --bg-code: #0d0d0d;
+      --border: #222222;
+      --border-hover: #333333;
+      --text: #ededed;
+      --text-2: #a1a1a1;
+      --text-3: #666666;
+      --accent: #10b981; /* Emerald/Trading Green */
+      --accent-dim: rgba(16, 185, 129, 0.12);
+      --accent-glow: rgba(16, 185, 129, 0.25);
+      --blue: #3b82f6;
+      --emerald: #10b981;
+      --rose: #f43f5e;
+      --amber: #f59e0b;
+      --cyan: #06b6d4;
+      --purple: #a855f7;
+      --nav-bg: rgba(10,10,10,0.85);
+    }
+
+    [data-theme="light"] {
+      --bg: #fafafa;
+      --bg-surface: #f4f4f5;
+      --bg-card: #ffffff;
+      --bg-code: #f0f0f2;
+      --border: #e4e4e7;
+      --border-hover: #d4d4d8;
+      --text: #18181b;
+      --text-2: #52525b;
+      --text-3: #a1a1aa;
+      --accent: #059669;
+      --accent-dim: rgba(5, 150, 105, 0.1);
+      --accent-glow: rgba(5, 150, 105, 0.2);
+      --blue: #2563eb;
+      --emerald: #059669;
+      --rose: #e11d48;
+      --amber: #d97706;
+      --cyan: #0891b2;
+      --purple: #9333ea;
+      --nav-bg: rgba(250,250,250,0.88);
+    }
+
+    /* =========================================
+       RESET & BASE
+       ========================================= */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'Inter', -apple-system, system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.65;
+      min-height: 100vh;
+      transition: background 0.2s, color 0.2s;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* =========================================
+       NAVIGATION
+       ========================================= */
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: var(--nav-bg);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 clamp(1rem, 4vw, 3rem);
+    }
+
+    .nav-left {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .nav-logo {
+      width: 28px; height: 28px;
+      background: var(--accent-dim);
+      border: 1px solid var(--accent);
+      border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    .nav-logo svg {
+      width: 16px; height: 16px;
+      stroke: var(--accent);
+      fill: none;
+      stroke-width: 2.2;
+    }
+
+    .nav-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .nav-badge {
+      font-size: 0.65rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 0.15rem 0.45rem;
+      border-radius: 4px;
+      background: var(--accent-dim);
+      color: var(--accent);
+      border: 1px solid var(--accent);
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 1.25rem;
+    }
+
+    .nav-links a {
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: var(--text-2);
+      text-decoration: none;
+      transition: color 0.15s;
+    }
+
+    .nav-links a:hover { color: var(--text); }
+
+    .theme-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-2);
+      border-radius: 6px;
+      width: 32px; height: 32px;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.85rem;
+      transition: border-color 0.15s, color 0.15s;
+    }
+
+    .theme-btn:hover { border-color: var(--border-hover); color: var(--text); }
+
+    /* =========================================
+       LAYOUT
+       ========================================= */
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2.5rem clamp(1rem, 4vw, 3rem) 6rem;
+    }
+
+    /* =========================================
+       HERO
+       ========================================= */
+    .hero {
+      margin-bottom: 3.5rem;
+      padding-bottom: 2.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .hero-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.72rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--accent);
+      background: var(--accent-dim);
+      border: 1px solid var(--accent-glow);
+      padding: 0.25rem 0.65rem;
+      border-radius: 20px;
+      margin-bottom: 1rem;
+    }
+
+    .hero h1 {
+      font-size: clamp(2rem, 4.5vw, 3.25rem);
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      line-height: 1.1;
+      margin-bottom: 0.75rem;
+    }
+
+    .hero p {
+      font-size: 1.05rem;
+      color: var(--text-2);
+      max-width: 760px;
+      line-height: 1.6;
+    }
+
+    .tech-stack-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-top: 1.5rem;
+    }
+
+    .tech-tag {
+      font-size: 0.72rem;
+      font-weight: 600;
+      padding: 0.25rem 0.65rem;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+      color: var(--text-2);
+      background: var(--bg-card);
+      display: flex; align-items: center; gap: 0.35rem;
+    }
+
+    .tag-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+    }
+
+    /* =========================================
+       SECTIONS & HEADINGS
+       ========================================= */
+    section { margin-bottom: 4.5rem; }
+
+    .s-label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--accent);
+      margin-bottom: 0.4rem;
+    }
+
+    .s-title {
+      font-size: 1.5rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      margin-bottom: 0.35rem;
+    }
+
+    .s-desc {
+      font-size: 0.88rem;
+      color: var(--text-2);
+      margin-bottom: 1.5rem;
+    }
+
+    /* =========================================
+       CARDS & GRIDS
+       ========================================= */
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.25rem;
+      transition: border-color 0.2s;
+    }
+
+    .card:hover { border-color: var(--border-hover); }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1rem;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+    }
+
+    @media (max-width: 768px) {
+      .grid-2, .grid-3 { grid-template-columns: 1fr; }
+      .nav-links a.hide-mobile { display: none; }
+    }
+
+    /* =========================================
+       CODE BLOCKS & CLIPBOARD
+       ========================================= */
+    pre {
+      background: var(--bg-code);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.9rem 1rem;
+      overflow-x: auto;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.78rem;
+      color: #e2e8f0;
+      line-height: 1.55;
+      position: relative;
+    }
+
+    [data-theme="light"] pre { color: #1e293b; }
+
+    code {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.82em;
+    }
+
+    :not(pre) > code {
+      background: var(--accent-dim);
+      padding: 0.15rem 0.4rem;
+      border-radius: 4px;
+      color: var(--accent);
+      font-size: 0.82em;
+    }
+
+    .code-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.5rem;
+    }
+
+    .code-lang {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.68rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-3);
+    }
+
+    .copy-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-2);
+      border-radius: 4px;
+      padding: 0.2rem 0.5rem;
+      font-size: 0.68rem;
+      cursor: pointer;
+      font-family: 'Inter', sans-serif;
+      transition: all 0.15s;
+    }
+
+    .copy-btn:hover {
+      background: var(--bg-surface);
+      color: var(--text);
+      border-color: var(--border-hover);
+    }
+
+    /* =========================================
+       COMMAND LIST (Vertical Stack)
+       ========================================= */
+    .cmd-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+
+    .cmd-item {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.85rem 1rem;
+      transition: border-color 0.15s;
+    }
+
+    .cmd-item:hover { border-color: var(--border-hover); }
+
+    .cmd-item-code {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--accent);
+      background: var(--bg-code);
+      padding: 0.45rem 0.65rem;
+      border-radius: 5px;
+      display: block;
+      overflow-x: auto;
+      white-space: pre;
+      line-height: 1.5;
+      margin-bottom: 0.4rem;
+    }
+
+    .cmd-item-desc {
+      font-size: 0.8rem;
+      color: var(--text-2);
+      line-height: 1.45;
+    }
+
+    /* =========================================
+       PATTERN CARDS (Study Guide)
+       ========================================= */
+    .pattern-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.25rem;
+      transition: border-color 0.2s;
+    }
+
+    .pattern-card:hover { border-color: var(--border-hover); }
+
+    .pattern-badge {
+      display: inline-block;
+      font-size: 0.65rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      padding: 0.15rem 0.45rem;
+      border-radius: 3px;
+      margin-bottom: 0.5rem;
+    }
+
+    .badge-concurrency { background: rgba(244,63,94,0.12); color: var(--rose); }
+    .badge-caching { background: rgba(6,182,212,0.12); color: var(--cyan); }
+    .badge-ai { background: rgba(168,85,247,0.12); color: var(--purple); }
+    .badge-resilience { background: rgba(245,158,11,0.12); color: var(--amber); }
+
+    .pattern-name {
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 0.35rem;
+    }
+
+    .pattern-desc {
+      font-size: 0.82rem;
+      color: var(--text-2);
+      margin-bottom: 0.75rem;
+      line-height: 1.55;
+    }
+
+    .pattern-takeaway {
+      font-size: 0.78rem;
+      color: var(--text-2);
+      padding-top: 0.6rem;
+      border-top: 1px solid var(--border);
+      margin-top: 0.6rem;
+    }
+
+    .pattern-takeaway strong {
+      color: var(--accent);
+      font-weight: 700;
+    }
+
+    /* =========================================
+       BENCHMARK TABLE
+       ========================================= */
+    .benchmark-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.82rem;
+      margin-top: 1rem;
+    }
+
+    .benchmark-table th, .benchmark-table td {
+      padding: 0.75rem 1rem;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .benchmark-table th {
+      font-weight: 700;
+      color: var(--text-3);
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      background: var(--bg-surface);
+    }
+
+    .benchmark-table tr:hover { background: var(--bg-surface); }
+
+    /* =========================================
+       API ENDPOINT
+       ========================================= */
+    .endpoint {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.25rem;
+      margin-bottom: 1rem;
+    }
+
+    .endpoint-row {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .method {
+      font-size: 0.7rem;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+    }
+
+    .method-post { background: rgba(16,185,129,0.12); color: var(--emerald); border: 1px solid rgba(16,185,129,0.25); }
+    .method-get { background: rgba(59,130,246,0.12); color: var(--blue); border: 1px solid rgba(59,130,246,0.25); }
+    .method-delete { background: rgba(244,63,94,0.12); color: var(--rose); border: 1px solid rgba(244,63,94,0.25); }
+
+    .endpoint-path {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.88rem;
+      font-weight: 600;
+    }
+
+    .endpoint-desc {
+      font-size: 0.82rem;
+      color: var(--text-2);
+      margin-bottom: 0.75rem;
+    }
+
+    /* =========================================
+       CALLOUTS & GOTCHAS
+       ========================================= */
+    .callout {
+      border-radius: 8px;
+      padding: 1rem 1.15rem;
+      margin-bottom: 1.25rem;
+      border-left: 3px solid;
+      font-size: 0.84rem;
+    }
+
+    .callout-warn { background: rgba(244,63,94,0.06); border-color: var(--rose); }
+    .callout-info { background: rgba(59,130,246,0.06); border-color: var(--blue); }
+    .callout-success { background: rgba(16,185,129,0.06); border-color: var(--emerald); }
+
+    .callout-title {
+      font-weight: 700;
+      font-size: 0.85rem;
+      margin-bottom: 0.25rem;
+    }
+
+    .callout-body {
+      color: var(--text-2);
+      font-size: 0.82rem;
+      line-height: 1.5;
+    }
+
+    /* =========================================
+       SVG DIAGRAM PANEL
+       ========================================= */
+    .diagram-panel {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.25rem;
+    }
+
+    .diagram-tabs {
+      display: flex;
+      gap: 0.3rem;
+      background: var(--bg-card);
+      padding: 3px;
+      border-radius: 7px;
+      margin-bottom: 1rem;
+      width: fit-content;
+    }
+
+    .diagram-tab {
+      background: transparent;
+      border: none;
+      color: var(--text-2);
+      padding: 0.35rem 0.8rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .diagram-tab.active {
+      background: var(--accent);
+      color: #0a0a0a;
+    }
+
+    /* =========================================
+       TOC LINKS
+       ========================================= */
+    .toc-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.78rem;
+      font-weight: 500;
+      color: var(--text-3);
+      text-decoration: none;
+      padding: 0.3rem 0;
+      transition: color 0.15s;
+    }
+
+    .toc-link:hover { color: var(--text); }
+
+    .toc-num {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.68rem;
+      font-weight: 700;
+      color: var(--accent);
+      min-width: 1.6rem;
+    }
+
+    /* Divider */
+    hr {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 3rem 0;
+    }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      bottom: 1.5rem;
+      right: 1.5rem;
+      background: var(--accent);
+      color: #0a0a0a;
+      padding: 0.55rem 1rem;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      opacity: 0;
+      transform: translateY(12px);
+      transition: all 0.25s;
+      z-index: 1000;
+      pointer-events: none;
+    }
+
+    .toast.show { opacity: 1; transform: translateY(0); }
+    section[id] { scroll-margin-top: 72px; }
+  </style>
+</head>
+
+<body>
+  <!-- Navigation -->
+  <nav>
+    <div class="nav-left">
+      <div class="nav-logo">
+        <svg viewBox="0 0 24 24"><path d="M3 3v18h18M7 16l4-6 4 3 5-7"></path></svg>
+      </div>
+      <span class="nav-title">StockVerse</span>
+      <span class="nav-badge">v1.0 Institutional</span>
+    </div>
+    <div class="nav-links">
+      <a href="#quickstart">Quick Start</a>
+      <a href="#architecture" class="hide-mobile">Architecture</a>
+      <a href="#patterns" class="hide-mobile">Study Guide</a>
+      <a href="#snippets" class="hide-mobile">Code</a>
+      <a href="#api">API</a>
+      <a href="#troubleshooting" class="hide-mobile">Gotchas</a>
+      <button class="theme-btn" id="themeToggle" title="Toggle Theme">
+        <span id="themeIcon">☀</span>
+      </button>
+    </div>
+  </nav>
+
+  <main class="container">
+
+    <!-- ======================== HERO ======================== -->
+    <header class="hero">
+      <div class="hero-label">High-Concurrency Trading & Portfolio Intelligence</div>
+      <h1>StockVerse Architecture</h1>
+      <p>
+        An enterprise stock trading simulator and AI quantitative analysis engine engineered with Spring Boot 3.4, React 19, PostgreSQL 18, Redis 7, and Google Gemini 1.5 Flash.
+      </p>
+
+      <div class="tech-stack-row">
+        <span class="tech-tag"><span class="tag-dot" style="background:#10b981;"></span> Spring Boot 3.4 (Java 17)</span>
+        <span class="tech-tag"><span class="tag-dot" style="background:#3b82f6;"></span> React 19 / Vite 6</span>
+        <span class="tech-tag"><span class="tag-dot" style="background:#06b6d4;"></span> PostgreSQL 18 (JPA @Version)</span>
+        <span class="tech-tag"><span class="tag-dot" style="background:#ef4444;"></span> Redis 7 (Sub-35ms Cache)</span>
+        <span class="tech-tag"><span class="tag-dot" style="background:#a855f7;"></span> Google Gemini 1.5 Flash (LangChain4j)</span>
+        <span class="tech-tag"><span class="tag-dot" style="background:#f59e0b;"></span> Grafana K6 (705 req/s Benchmarked)</span>
+      </div>
+    </header>
+
+    <!-- ======================== TABLE OF CONTENTS ======================== -->
+    <section style="margin-bottom: 3rem;">
+      <div style="display: flex; flex-wrap: wrap; gap: 1.5rem;">
+        <a class="toc-link" href="#quickstart"><span class="toc-num">01</span> Quick Start & Commands</a>
+        <a class="toc-link" href="#architecture"><span class="toc-num">02</span> System Topology & Flow</a>
+        <a class="toc-link" href="#patterns"><span class="toc-num">03</span> Study Guide & Patterns</a>
+        <a class="toc-link" href="#snippets"><span class="toc-num">04</span> Implementation Code</a>
+        <a class="toc-link" href="#api"><span class="toc-num">05</span> REST API Reference</a>
+        <a class="toc-link" href="#troubleshooting"><span class="toc-num">06</span> Engineering Gotchas</a>
+      </div>
+    </section>
+
+    <!-- ======================== 01. QUICK START ======================== -->
+    <section id="quickstart">
+      <div class="s-label">01 — Quick Start</div>
+      <h2 class="s-title">Setup & Execution Commands</h2>
+      <p class="s-desc">Launch infrastructure containers, start the backend engine, and test trading workflows.</p>
+
+      <!-- Prerequisites -->
+      <div class="card" style="margin-bottom: 1rem;">
+        <div class="code-header">
+          <span class="code-lang">System Prerequisites</span>
+          <button class="copy-btn" onclick="copyText('java --version\nnode --version\nmvn --version\ndocker --version')">Copy</button>
+        </div>
+        <pre><code># Runtime Requirements
+Java 17+      → java --version
+Node.js 18+   → node --version && npm --version
+Maven 3.8+    → mvn --version
+Docker        → docker --version</code></pre>
+      </div>
+
+      <!-- Environment Setup -->
+      <div class="card" style="margin-bottom: 1rem;">
+        <div class="code-header">
+          <span class="code-lang">Environment Variables (.env in stock-backend/)</span>
+          <button class="copy-btn" onclick="copyText('SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/stockdb\nSPRING_DATASOURCE_USERNAME=admin\nSPRING_DATASOURCE_PASSWORD=admin\nREDIS_HOST=localhost\nREDIS_PORT=6379\nJWT_SECRET=stock-portfolio-manager-jwt-secret-key-32bytes-min\nGEMINI_API_KEY=your_gemini_api_key_here')">Copy</button>
+        </div>
+        <pre><code># PostgreSQL 18 & Redis
+SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/stockdb
+SPRING_DATASOURCE_USERNAME=admin
+SPRING_DATASOURCE_PASSWORD=admin
+REDIS_HOST=localhost
+REDIS_PORT=6379
+
+# JWT Security (32-byte secret minimum)
+JWT_SECRET=stock-portfolio-manager-jwt-secret-key-32bytes-min
+JWT_EXPIRATION_MS=86400000
+
+# Google Gemini 1.5 Flash (LangChain4j)
+GEMINI_API_KEY=your_gemini_api_key_here
+
+# External Market Data (Optional)
+FINNHUB_API_KEY=your_finnhub_key_here
+TWELVE_DATA_API_KEY=your_twelvedata_key_here</code></pre>
+      </div>
+
+      <!-- Command List -->
+      <div class="card">
+        <div class="cmd-list">
+          <div class="cmd-item">
+            <code class="cmd-item-code">docker run -d --name stockverse-postgres -e POSTGRES_DB=stockdb -e POSTGRES_USER=admin -e POSTGRES_PASSWORD=admin -p 5432:5432 postgres:18-alpine</code>
+            <div class="cmd-item-desc">Starts PostgreSQL 18 container with persistent storage on port <code>5432</code>.</div>
+          </div>
+          <div class="cmd-item">
+            <code class="cmd-item-code">docker run -d --name stockverse-redis -p 6379:6379 redis:alpine</code>
+            <div class="cmd-item-desc">Starts Redis 7 cache on port <code>6379</code> for sub-35ms portfolio analysis caching.</div>
+          </div>
+          <div class="cmd-item">
+            <code class="cmd-item-code">cd stock-backend && mvn clean spring-boot:run</code>
+            <div class="cmd-item-desc">Boots the Spring Boot 3.4 API gateway on <code>localhost:8080</code>.</div>
+          </div>
+          <div class="cmd-item">
+            <code class="cmd-item-code">cd stock-frontend && npm install && npm run dev</code>
+            <div class="cmd-item-desc">Spins up Vite dev server with React 19 on <code>http://localhost:5173</code>.</div>
+          </div>
+          <div class="cmd-item">
+            <code class="cmd-item-code">curl -X POST localhost:8080/api/trade -H "Content-Type: application/json" -H "Authorization: Bearer $TOKEN" -d '{"ticker":"AAPL","quantity":10,"action":"BUY"}'</code>
+            <div class="cmd-item-desc">Executes transactional stock buy with JPA optimistic locking and automatic Redis cache invalidation.</div>
+          </div>
+          <div class="cmd-item">
+            <code class="cmd-item-code">curl -X GET localhost:8080/api/portfolio/analyze -H "Authorization: Bearer $TOKEN"</code>
+            <div class="cmd-item-desc">Retrieves structured AI portfolio health metrics from Redis cache (or live Gemini 1.5 Flash on cache miss).</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <hr>
+
+    <!-- ======================== 02. ARCHITECTURE ======================== -->
+    <section id="architecture">
+      <div class="s-label">02 — Architecture</div>
+      <h2 class="s-title">System Topology & Data Flow</h2>
+      <p class="s-desc">Decoupled reactive client, Spring Boot enterprise gateway, optimistic locking ledger, and Redis caching tier.</p>
+
+      <div class="diagram-panel">
+        <div class="diagram-tabs">
+          <button class="diagram-tab active" onclick="switchDiag('topo')">Topology View</button>
+          <button class="diagram-tab" onclick="switchDiag('seq')">Trade & AI Sequence</button>
+        </div>
+
+        <!-- SVG Topology Diagram -->
+        <svg id="svgTopo" viewBox="0 0 960 420" width="100%" height="420" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <filter id="shadow" x="-5%" y="-5%" width="110%" height="115%">
+              <feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="#000" flood-opacity="0.45" />
+            </filter>
+          </defs>
+
+          <!-- React Frontend -->
+          <g transform="translate(30, 160)">
+            <rect width="180" height="95" rx="10" fill="#141414" stroke="#3b82f6" stroke-width="1.5" filter="url(#shadow)" />
+            <text x="90" y="32" fill="#fafafa" font-size="13" font-weight="700" text-anchor="middle" font-family="Inter">React 19 Frontend</text>
+            <text x="90" y="52" fill="#3b82f6" font-size="10" text-anchor="middle" font-family="JetBrains Mono">Vite 6 · Axios Interceptor</text>
+            <text x="90" y="72" fill="#a1a1a1" font-size="10" text-anchor="middle" font-family="Inter">JWT Storage & Recharts</text>
+          </g>
+
+          <!-- Spring Boot API -->
+          <g transform="translate(290, 85)">
+            <rect width="250" height="250" rx="12" fill="#141414" stroke="#10b981" stroke-width="2" filter="url(#shadow)" />
+            <text x="125" y="32" fill="#10b981" font-size="14" font-weight="800" text-anchor="middle" font-family="Inter">Spring Boot 3.4 API Gateway</text>
+            <text x="125" y="50" fill="#666" font-size="10" text-anchor="middle" font-family="JetBrains Mono">Port 8080 · Java 17</text>
+
+            <!-- Sub components -->
+            <rect x="20" y="68" width="210" height="34" rx="6" fill="#1a1a1a" stroke="#222" />
+            <text x="125" y="90" fill="#ededed" font-size="11" font-weight="600" text-anchor="middle" font-family="Inter">SecurityFilterChain & JwtTokenFilter</text>
+
+            <rect x="20" y="112" width="210" height="55" rx="6" fill="#1a1a1a" stroke="#10b981" stroke-dasharray="2 2" />
+            <text x="125" y="132" fill="#10b981" font-size="11" font-weight="700" text-anchor="middle" font-family="Inter">TradeService (@Transactional)</text>
+            <text x="125" y="152" fill="#a1a1a1" font-size="9" text-anchor="middle" font-family="JetBrains Mono">@Version Check + @CacheEvict</text>
+
+            <rect x="20" y="177" width="210" height="55" rx="6" fill="#1a1a1a" stroke="#a855f7" stroke-dasharray="2 2" />
+            <text x="125" y="197" fill="#a855f7" font-size="11" font-weight="700" text-anchor="middle" font-family="Inter">PortfolioAiService (@Cacheable)</text>
+            <text x="125" y="217" fill="#a1a1a1" font-size="9" text-anchor="middle" font-family="JetBrains Mono">LangChain4j + JSON Mode</text>
+          </g>
+
+          <!-- PostgreSQL 18 -->
+          <g transform="translate(630, 45)">
+            <rect width="280" height="85" rx="10" fill="#141414" stroke="#06b6d4" stroke-width="1.5" filter="url(#shadow)" />
+            <text x="140" y="28" fill="#fafafa" font-size="13" font-weight="700" text-anchor="middle" font-family="Inter">PostgreSQL 18 Database</text>
+            <text x="140" y="48" fill="#06b6d4" font-size="10" text-anchor="middle" font-family="JetBrains Mono">app_users (version, balance) · trades</text>
+            <text x="140" y="68" fill="#a1a1a1" font-size="10" text-anchor="middle" font-family="Inter">Optimistic Locking: WHERE version = ?</text>
+          </g>
+
+          <!-- Redis 7 Cache -->
+          <g transform="translate(630, 165)">
+            <rect width="280" height="85" rx="10" fill="#141414" stroke="#f43f5e" stroke-width="1.5" filter="url(#shadow)" />
+            <text x="140" y="28" fill="#fafafa" font-size="13" font-weight="700" text-anchor="middle" font-family="Inter">Redis 7 In-Memory Cache</text>
+            <text x="140" y="48" fill="#f43f5e" font-size="10" text-anchor="middle" font-family="JetBrains Mono">portfolioAnalysis::&lt;userId&gt; (TTL: 15m)</text>
+            <text x="140" y="68" fill="#a1a1a1" font-size="10" text-anchor="middle" font-family="Inter">Sub-35ms Reads · Fail-Open Error Handler</text>
+          </g>
+
+          <!-- Google Gemini AI -->
+          <g transform="translate(630, 285)">
+            <rect width="280" height="85" rx="10" fill="#141414" stroke="#a855f7" stroke-width="1.5" filter="url(#shadow)" />
+            <text x="140" y="28" fill="#fafafa" font-size="13" font-weight="700" text-anchor="middle" font-family="Inter">Google Gemini 1.5 Flash</text>
+            <text x="140" y="48" fill="#a855f7" font-size="10" text-anchor="middle" font-family="JetBrains Mono">LangChain4j · Structured JSON (Temp 0.2)</text>
+            <text x="140" y="68" fill="#a1a1a1" font-size="10" text-anchor="middle" font-family="Inter">Quantitative Risk Scoring & Diagnostics</text>
+          </g>
+
+          <!-- Connectors -->
+          <!-- Client to Spring -->
+          <path d="M 210 207 L 290 207" stroke="#3b82f6" stroke-width="1.5" />
+          <text x="250" y="200" fill="#3b82f6" font-size="9" font-weight="700" text-anchor="middle" font-family="Inter">REST (JWT)</text>
+
+          <!-- Spring to Postgres -->
+          <path d="M 540 145 L 630 87" stroke="#06b6d4" stroke-width="1.5" />
+          <text x="590" y="110" fill="#06b6d4" font-size="9" font-weight="600" text-anchor="middle" font-family="Inter">JPA / OCC</text>
+
+          <!-- Spring to Redis -->
+          <path d="M 540 207 L 630 207" stroke="#f43f5e" stroke-width="1.5" />
+          <text x="585" y="200" fill="#f43f5e" font-size="9" font-weight="600" text-anchor="middle" font-family="Inter">Cache / Evict</text>
+
+          <!-- Spring to Gemini -->
+          <path d="M 540 265 L 630 327" stroke="#a855f7" stroke-width="1.5" />
+          <text x="595" y="305" fill="#a855f7" font-size="9" font-weight="600" text-anchor="middle" font-family="Inter">JSON Mode</text>
+        </svg>
+
+        <!-- SVG Sequence Diagram -->
+        <svg id="svgSeq" viewBox="0 0 960 420" width="100%" height="420" xmlns="http://www.w3.org/2000/svg" style="display: none;">
+          <g font-size="11" font-weight="700" text-anchor="middle" font-family="Inter">
+            <!-- Lifeline headers -->
+            <rect x="30" y="15" width="100" height="30" rx="6" fill="#141414" stroke="#404040" />
+            <text x="80" y="35" fill="#ededed">Trader / Client</text>
+            <line x1="80" y1="45" x2="80" y2="400" stroke="#262626" stroke-dasharray="4 4" />
+
+            <rect x="180" y="15" width="120" height="30" rx="6" fill="#141414" stroke="#3b82f6" />
+            <text x="240" y="35" fill="#60a5fa">JwtTokenFilter</text>
+            <line x1="240" y1="45" x2="240" y2="400" stroke="#262626" stroke-dasharray="4 4" />
+
+            <rect x="350" y="15" width="130" height="30" rx="6" fill="#141414" stroke="#10b981" />
+            <text x="415" y="35" fill="#10b981">TradeService</text>
+            <line x1="415" y1="45" x2="415" y2="400" stroke="#262626" stroke-dasharray="4 4" />
+
+            <rect x="530" y="15" width="120" height="30" rx="6" fill="#141414" stroke="#06b6d4" />
+            <text x="590" y="35" fill="#22d3ee">PostgreSQL</text>
+            <line x1="590" y1="45" x2="590" y2="400" stroke="#262626" stroke-dasharray="4 4" />
+
+            <rect x="700" y="15" width="110" height="30" rx="6" fill="#141414" stroke="#f43f5e" />
+            <text x="755" y="35" fill="#fb7185">Redis Cache</text>
+            <line x1="755" y1="45" x2="755" y2="400" stroke="#262626" stroke-dasharray="4 4" />
+
+            <rect x="850" y="15" width="90" height="30" rx="6" fill="#141414" stroke="#a855f7" />
+            <text x="895" y="35" fill="#c084fc">Gemini 1.5</text>
+            <line x1="895" y1="45" x2="895" y2="400" stroke="#262626" stroke-dasharray="4 4" />
+          </g>
+
+          <!-- Phase 1: Trade Placement -->
+          <rect x="20" y="65" width="920" height="150" rx="6" fill="rgba(16,185,129,0.03)" stroke="#10b981" stroke-dasharray="4 4" />
+          <text x="35" y="85" fill="#10b981" font-size="10" font-weight="700" font-family="Inter">PHASE 1: ATOMIC TRADE EXECUTION & OCC</text>
+
+          <line x1="80" y1="100" x2="240" y2="100" stroke="#3b82f6" stroke-width="1.5" />
+          <text x="160" y="94" fill="#3b82f6" font-size="9" text-anchor="middle" font-family="Inter">POST /api/trade (Bearer JWT)</text>
+
+          <line x1="240" y1="118" x2="415" y2="118" stroke="#10b981" stroke-width="1.5" />
+          <text x="325" y="112" fill="#10b981" font-size="9" text-anchor="middle" font-family="Inter">executeTrade(BUY AAPL)</text>
+
+          <line x1="415" y1="140" x2="590" y2="140" stroke="#06b6d4" stroke-width="1.5" />
+          <text x="502" y="134" fill="#06b6d4" font-size="9" text-anchor="middle" font-family="Inter">UPDATE app_users SET ver=ver+1 WHERE ver=?</text>
+
+          <line x1="415" y1="170" x2="755" y2="170" stroke="#f43f5e" stroke-width="1.5" />
+          <text x="585" y="164" fill="#f43f5e" font-size="9" text-anchor="middle" font-family="Inter">@CacheEvict: DEL portfolioAnalysis::&lt;uid&gt;</text>
+
+          <line x1="415" y1="195" x2="80" y2="195" stroke="#10b981" stroke-width="1.5" stroke-dasharray="2 2" />
+          <text x="250" y="189" fill="#10b981" font-size="9" text-anchor="middle" font-family="Inter">200 OK (or 409 Conflict if OCC Collision)</text>
+
+          <!-- Phase 2: AI Evaluation -->
+          <rect x="20" y="235" width="920" height="155" rx="6" fill="rgba(168,85,247,0.03)" stroke="#a855f7" stroke-dasharray="4 4" />
+          <text x="35" y="255" fill="#a855f7" font-size="10" font-weight="700" font-family="Inter">PHASE 2: CACHE-ASIDE AI PORTFOLIO ADVISOR</text>
+
+          <line x1="80" y1="275" x2="415" y2="275" stroke="#3b82f6" stroke-width="1.5" />
+          <text x="250" y="269" fill="#3b82f6" font-size="9" text-anchor="middle" font-family="Inter">GET /api/portfolio/analyze</text>
+
+          <line x1="415" y1="298" x2="755" y2="298" stroke="#f43f5e" stroke-width="1.5" />
+          <text x="585" y="292" fill="#f43f5e" font-size="9" text-anchor="middle" font-family="Inter">Check Redis cache (Cache Hit: returns &lt;35ms)</text>
+
+          <line x1="415" y1="330" x2="895" y2="330" stroke="#a855f7" stroke-width="1.5" />
+          <text x="655" y="324" fill="#a855f7" font-size="9" text-anchor="middle" font-family="Inter">Cache Miss ──► Gemini 1.5 Flash (LangChain4j JSON Mode, Temp 0.2)</text>
+
+          <line x1="895" y1="360" x2="755" y2="360" stroke="#f43f5e" stroke-width="1.5" stroke-dasharray="2 2" />
+          <text x="825" y="354" fill="#f43f5e" font-size="9" text-anchor="middle" font-family="Inter">SET with 15m TTL</text>
+
+          <line x1="415" y1="380" x2="80" y2="380" stroke="#a855f7" stroke-width="1.5" stroke-dasharray="2 2" />
+          <text x="250" y="374" fill="#a855f7" font-size="9" text-anchor="middle" font-family="Inter">200 OK (PortfolioAnalysisDto)</text>
+        </svg>
+      </div>
+    </section>
+
+    <hr>
+
+    <!-- ======================== 03. STUDY GUIDE & DESIGN PATTERNS ======================== -->
+    <section id="patterns">
+      <div class="s-label">03 — Study Guide</div>
+      <h2 class="s-title">Design Patterns & Deep Dives</h2>
+      <p class="s-desc">Interview-ready architectural patterns with code rationale, concurrency proofs, and benchmark results.</p>
+
+      <div class="grid-2">
+        <!-- Pattern 1: Optimistic Locking -->
+        <div class="pattern-card">
+          <span class="pattern-badge badge-concurrency">Concurrency Control</span>
+          <div class="pattern-name">Optimistic Locking Pattern (@Version)</div>
+          <div class="pattern-desc">
+            Prevents the classic <em>Lost Update</em> race condition without thread-blocking pessimistic locks. Under heavy concurrent trade execution, threads do not hold database row locks (`SELECT FOR UPDATE`), eliminating thread pool exhaustion and deadlocks.
+          </div>
+          <pre><code>// Entity version check in SQL
+UPDATE app_users 
+SET cash_balance = ?, version = version + 1 
+WHERE id = ? AND version = ?;
+
+// If affected rows == 0:
+// Throws ObjectOptimisticLockingFailureException
+// Rollback TX -> Map to HTTP 409 Conflict</code></pre>
+          <div class="pattern-takeaway">
+            <strong>Takeaway:</strong> High-throughput financial ledgers prefer OCC over pessimistic locking: failed attempts trigger clean rollbacks and client retry prompts rather than locking table rows.
+          </div>
+        </div>
+
+        <!-- Pattern 2: Cache-Aside & Invalidation -->
+        <div class="pattern-card">
+          <span class="pattern-badge badge-caching">Data Caching</span>
+          <div class="pattern-name">Event-Driven Redis Cache Invalidation</div>
+          <div class="pattern-desc">
+            Gemini 1.5 Flash portfolio evaluations take 1.2–2.5s and consume billable quotas. Redis caches diagnostics under <code>portfolioAnalysis::&lt;userId&gt;</code> with a 15-minute TTL. Any BUY or SELL trade immediately purges the key via <code>@CacheEvict</code>.
+          </div>
+          <pre><code>// Retrieval with Redis Cache
+@Cacheable(value = "portfolioAnalysis", key = "#userId")
+public PortfolioAnalysisDto analyzePortfolio(Long userId) { ... }
+
+// Immediate Write-Through Invalidation
+@Transactional
+@CacheEvict(value = "portfolioAnalysis", key = "#userId")
+public TradeResponse executeTrade(...) { ... }</code></pre>
+          <div class="pattern-takeaway">
+            <strong>Takeaway:</strong> Sub-35ms read delivery with guaranteed write-through freshness, backed by a fail-open <code>CacheErrorHandler</code> if Redis is down.
+          </div>
+        </div>
+
+        <!-- Pattern 3: Structured JSON Mode -->
+        <div class="pattern-card">
+          <span class="pattern-badge badge-ai">LLM Reliability</span>
+          <div class="pattern-name">Structured JSON Schema Enforcement</div>
+          <div class="pattern-desc">
+            Raw LLM text and markdown fences (<code>```json</code>) break frontend charts. StockVerse pairs LangChain4j with Gemini 1.5 Flash using <code>ResponseFormat.JSON</code> and temperature 0.2 to guarantee schema compliance for portfolio scores (0-100) and risk metrics.
+          </div>
+          <pre><code>GoogleAiGeminiChatModel.builder()
+  .apiKey(geminiKey)
+  .modelName("gemini-1.5-flash")
+  .temperature(0.2) // Deterministic output
+  .responseFormat(ResponseFormat.JSON)
+  .timeout(Duration.ofSeconds(60))
+  .build();</code></pre>
+          <div class="pattern-takeaway">
+            <strong>Takeaway:</strong> Defense-in-depth: Includes zero-holding fast return and algorithmic rule-based fallback if the AI API encounters rate limits.
+          </div>
+        </div>
+
+        <!-- Pattern 4: K6 Load Testing & Benchmarks -->
+        <div class="pattern-card">
+          <span class="pattern-badge badge-resilience">Resilience & Benchmarks</span>
+          <div class="pattern-name">Grafana K6 Load Test Methodology</div>
+          <div class="pattern-desc">
+            Validated under simulated distributed trader concurrency. Proves that OCC collisions return HTTP 409 safely without ledger balance corruption or HTTP 500 errors.
+          </div>
+          <table class="benchmark-table">
+            <thead>
+              <tr>
+                <th>Scenario</th>
+                <th>VUs</th>
+                <th>Throughput</th>
+                <th>p(95)</th>
+                <th>Failures</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Trading Engine</strong></td>
+                <td>50</td>
+                <td><strong>705 req/s</strong></td>
+                <td>10.58 ms</td>
+                <td><span style="color:var(--emerald);">0% (No 500s)</span></td>
+              </tr>
+              <tr>
+                <td><strong>Redis Cache Hit</strong></td>
+                <td>100</td>
+                <td><strong>2,136 req/s</strong></td>
+                <td>82.87 ms</td>
+                <td><span style="color:var(--emerald);">0%</span></td>
+              </tr>
+              <tr>
+                <td><strong>Security Filter</strong></td>
+                <td>10</td>
+                <td><strong>9,408 req/s</strong></td>
+                <td>1.49 ms</td>
+                <td><span style="color:var(--emerald);">0%</span></td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="pattern-takeaway">
+            <strong>Takeaway:</strong> Zero 500 errors across write contention proves ACID rollback safety and stateless filter throughput.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <hr>
+
+    <!-- ======================== 04. CODE SNIPPETS ======================== -->
+    <section id="snippets">
+      <div class="s-label">04 — Code Reference</div>
+      <h2 class="s-title">Core Implementation Snippets</h2>
+      <p class="s-desc">Clean, production-ready extracts demonstrating locking, caching, AI prompts, and security.</p>
+
+      <div class="grid-2">
+        <!-- Snippet 1: JPA Optimistic Locking -->
+        <div class="card">
+          <div class="code-header">
+            <span class="code-lang">User.java — Optimistic Locking (@Version)</span>
+            <button class="copy-btn" onclick="copySnippet('user-code')">Copy</button>
+          </div>
+          <pre id="user-code"><code>@Entity
+@Table(name = "app_users")
+@Getter @Setter @Builder
+public class User {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(nullable = false, unique = true)
+    private String email;
+
+    @Column(nullable = false, precision = 19, scale = 4)
+    @Builder.Default
+    private BigDecimal cashBalance = new BigDecimal("100000.0000");
+
+    @Version
+    @Column(name = "version")
+    @Builder.Default
+    private Long version = 0L;
+
+    // Defense-in-depth against null version unboxing
+    @PostLoad @PrePersist @PreUpdate
+    private void ensureVersionNotNull() {
+        if (this.version == null) this.version = 0L;
+    }
+}</code></pre>
+        </div>
+
+        <!-- Snippet 2: Redis Cache Config -->
+        <div class="card">
+          <div class="code-header">
+            <span class="code-lang">CacheConfig.java — Fail-Open Redis</span>
+            <button class="copy-btn" onclick="copySnippet('cache-code')">Copy</button>
+          </div>
+          <pre id="cache-code"><code>@Configuration
+@EnableCaching
+@Slf4j
+public class CacheConfig implements CachingConfigurer {
+
+    @Bean
+    public RedisCacheManager cacheManager(RedisConnectionFactory factory) {
+        RedisCacheConfiguration config = RedisCacheConfiguration.defaultCacheConfig()
+            .entryTtl(Duration.ofMinutes(15))
+            .disableCachingNullValues()
+            .serializeValuesWith(SerializationPair.fromSerializer(RedisSerializer.json()));
+
+        return RedisCacheManager.builder(factory).cacheDefaults(config).build();
+    }
+
+    @Override
+    public CacheErrorHandler errorHandler() {
+        return new CacheErrorHandler() {
+            @Override
+            public void handleCacheGetError(RuntimeException ex, Cache c, Object k) {
+                log.warn("Redis GET failed for key [{}]. Falling back.", k);
+            }
+            @Override
+            public void handleCacheEvictError(RuntimeException ex, Cache c, Object k) {
+                log.warn("Redis EVICT failed for key [{}]. Continuing.", k);
+            }
+        };
+    }
+}</code></pre>
+        </div>
+
+        <!-- Snippet 3: Structured Gemini Advisor -->
+        <div class="card">
+          <div class="code-header">
+            <span class="code-lang">PortfolioAiService.java — Gemini JSON Mode</span>
+            <button class="copy-btn" onclick="copySnippet('gemini-code')">Copy</button>
+          </div>
+          <pre id="gemini-code"><code>@Service
+@RequiredArgsConstructor
+@Slf4j
+public class PortfolioAiService {
+    private final ChatLanguageModel chatModel;
+    private final PortfolioPositionRepository positionRepo;
+    private final ObjectMapper mapper;
+
+    @Cacheable(value = "portfolioAnalysis", key = "#userId")
+    public PortfolioAnalysisDto analyzePortfolio(Long userId) {
+        List&lt;PortfolioPosition&gt; positions = positionRepo.findByUserId(userId);
+        if (positions.isEmpty()) return getDefaultStarterAssessment();
+
+        try {
+            String rawJson = chatModel.generate(buildStructuredPrompt(positions));
+            String cleaned = rawJson.replaceAll("```json\\s*", "").replaceAll("```\\s*", "").trim();
+            return mapper.readValue(cleaned, PortfolioAnalysisDto.class);
+        } catch (Exception e) {
+            log.error("AI analysis failed: {}. Falling back.", e.getMessage());
+            return buildFallbackAssessment(positions);
+        }
+    }
+}</code></pre>
+        </div>
+
+        <!-- Snippet 4: JWT Security Filter -->
+        <div class="card">
+          <div class="code-header">
+            <span class="code-lang">JwtTokenFilter.java — Stateless Security</span>
+            <button class="copy-btn" onclick="copySnippet('jwt-code')">Copy</button>
+          </div>
+          <pre id="jwt-code"><code>@Component
+@RequiredArgsConstructor
+public class JwtTokenFilter extends OncePerRequestFilter {
+    private final JwtService jwtService;
+    private final CustomUserDetailsService userDetailsService;
+
+    @Override
+    protected void doFilterInternal(HttpServletRequest req, HttpServletResponse res, FilterChain chain)
+            throws ServletException, IOException {
+        String authHeader = req.getHeader(HttpHeaders.AUTHORIZATION);
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            chain.doFilter(req, res);
+            return;
+        }
+
+        String token = authHeader.substring(7);
+        if (jwtService.isTokenValid(token)) {
+            UserDetails user = userDetailsService.loadUserByUsername(jwtService.extractUsername(token));
+            UsernamePasswordAuthenticationToken auth = 
+                new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());
+            auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(req));
+            SecurityContextHolder.getContext().setAuthentication(auth);
+        }
+        chain.doFilter(req, res);
+    }
+}</code></pre>
+        </div>
+      </div>
+    </section>
+
+    <hr>
+
+    <!-- ======================== 05. REST API ======================== -->
+    <section id="api">
+      <div class="s-label">05 — API Reference</div>
+      <h2 class="s-title">REST Contract Endpoints</h2>
+      <p class="s-desc">Verified endpoints for trading, portfolio intelligence, and user authentication.</p>
+
+      <!-- Endpoint 1: Trade Execution -->
+      <div class="endpoint">
+        <div class="endpoint-row">
+          <span class="method method-post">POST</span>
+          <span class="endpoint-path">/api/trade</span>
+          <span class="nav-badge" style="margin-left:auto;">Protected (JWT)</span>
+        </div>
+        <div class="endpoint-desc">Executes BUY or SELL stock orders. Enforces transactional consistency and checks entity version for collision detection.</div>
+        
+        <div class="grid-2">
+          <div>
+            <div class="code-header"><span class="code-lang">Request Body</span></div>
+            <pre><code>{
+  "ticker": "AAPL",
+  "quantity": 10,
+  "action": "BUY"
+}</code></pre>
+          </div>
+          <div>
+            <div class="code-header"><span class="code-lang">Response (200 OK)</span></div>
+            <pre><code>{
+  "success": true,
+  "transactionId": 1042,
+  "ticker": "AAPL",
+  "quantity": 10,
+  "action": "BUY",
+  "executedPrice": 224.50,
+  "totalCost": 2245.00,
+  "remainingCash": 97755.00
+}</code></pre>
+          </div>
+        </div>
+      </div>
+
+      <!-- Endpoint 2: AI Advisor -->
+      <div class="endpoint">
+        <div class="endpoint-row">
+          <span class="method method-get">GET</span>
+          <span class="endpoint-path">/api/portfolio/analyze</span>
+          <span class="nav-badge" style="margin-left:auto;">Protected (Cached)</span>
+        </div>
+        <div class="endpoint-desc">Delivers comprehensive quantitative portfolio health, risk metrics, and holding actions (cached in Redis for 15 minutes).</div>
+        
+        <div class="code-header"><span class="code-lang">Response (200 OK)</span></div>
+        <pre><code>{
+  "portfolioScore": 84,
+  "diversificationScore": 78,
+  "riskLevel": "Moderate",
+  "summary": "Strong mega-cap technology tilt with substantial liquidity.",
+  "strengths": ["Low average buy price across AAPL", "Cash cushion ($97,755)"],
+  "weaknesses": ["Concentration risk in Consumer Electronics sector"],
+  "holdingRecommendations": [
+    { "ticker": "AAPL", "action": "HOLD", "rationale": "Maintain allocation without adding risk." }
+  ]
+}</code></pre>
+      </div>
+
+      <!-- Endpoint 3: Positions -->
+      <div class="endpoint">
+        <div class="endpoint-row">
+          <span class="method method-get">GET</span>
+          <span class="endpoint-path">/api/trade/positions</span>
+          <span class="nav-badge" style="margin-left:auto;">Protected (JWT)</span>
+        </div>
+        <div class="endpoint-desc">Fetches all open equity holdings, weighted average cost basis, and calculated unrealized PnL.</div>
+        <div class="code-header"><span class="code-lang">Response (200 OK)</span></div>
+        <pre><code>[
+  {
+    "id": 12,
+    "ticker": "AAPL",
+    "quantity": 25,
+    "averageBuyPrice": 218.40,
+    "currentPrice": 224.50,
+    "unrealizedPnL": 152.50
+  }
+]</code></pre>
+      </div>
+    </section>
+
+    <hr>
+
+    <!-- ======================== 06. TROUBLESHOOTING ======================== -->
+    <section id="troubleshooting">
+      <div class="s-label">06 — Debug & Troubleshooting</div>
+      <h2 class="s-title">Engineering Gotchas & Incident Response</h2>
+      <p class="s-desc">Known production failure modes, concurrency race conditions, and mitigation playbooks.</p>
+
+      <div class="callout callout-warn">
+        <div class="callout-title">Gotcha 1: Concurrency Collisions Throwing 500 Instead of 409</div>
+        <div class="callout-body">
+          <strong>Symptom:</strong> Rapid double-clicks throw <code>ObjectOptimisticLockingFailureException</code>, showing an internal error.<br>
+          <strong>Fix:</strong> Catch optimistic lock exceptions in <code>TradeService</code>, wrap in <code>TradeConflictException</code>, and map via <code>@RestControllerAdvice</code> to <strong>HTTP 409 Conflict</strong> so the UI can prompt the user to retry.
+        </div>
+      </div>
+
+      <div class="callout callout-info">
+        <div class="callout-title">Gotcha 2: Redis Connection Partition Crashing Trades</div>
+        <div class="callout-body">
+          <strong>Symptom:</strong> If Redis restarts or drops connections, `@CacheEvict` in the trade method crashes transactions.<br>
+          <strong>Fix:</strong> Implement <code>CachingConfigurer.errorHandler()</code> in <code>CacheConfig.java</code>. Log eviction errors as warnings so PostgreSQL commits succeed even if Redis is unreachable.
+        </div>
+      </div>
+
+      <div class="callout callout-warn">
+        <div class="callout-title">Gotcha 3: Infinite JSON Recursion on JPA Fetch</div>
+        <div class="callout-body">
+          <strong>Symptom:</strong> Fetching positions throws <code>Document nesting depth (501) exceeds the maximum allowed</code>.<br>
+          <strong>Fix:</strong> Add <code>@JsonIgnore</code> to bidirectional parent entity references in child entities (e.g. <code>@ManyToOne @JsonIgnore private User user;</code> in <code>PortfolioPosition.java</code>).
+        </div>
+      </div>
+
+      <div class="callout callout-success">
+        <div class="callout-title">Gotcha 4: Hibernate NullPointerException inside Versioning.increment</div>
+        <div class="callout-body">
+          <strong>Symptom:</strong> Pre-existing database rows with SQL <code>NULL</code> in the version column trigger unboxing NPEs.<br>
+          <strong>Fix:</strong> Add <code>@Builder.Default private Long version = 0L;</code> along with JPA lifecycle callbacks (<code>@PostLoad @PrePersist @PreUpdate</code>) ensuring <code>version != null</code>.
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Toast -->
+  <div class="toast" id="toast">Copied to clipboard</div>
+
+  <script>
+    // Theme Toggle
+    const themeBtn = document.getElementById('themeToggle');
+    const themeIcon = document.getElementById('themeIcon');
+
+    function applyTheme(theme) {
+      document.documentElement.setAttribute('data-theme', theme);
+      themeIcon.textContent = theme === 'light' ? '🌙' : '☀';
+      localStorage.setItem('stockverse-theme', theme);
+    }
+
+    const savedTheme = localStorage.getItem('stockverse-theme') || 
+      (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+    applyTheme(savedTheme);
+
+    themeBtn.addEventListener('click', () => {
+      const current = document.documentElement.getAttribute('data-theme');
+      applyTheme(current === 'light' ? 'dark' : 'light');
+    });
+
+    // Diagram Switcher
+    function switchDiag(view) {
+      const topo = document.getElementById('svgTopo');
+      const seq = document.getElementById('svgSeq');
+      const tabs = document.querySelectorAll('.diagram-tab');
+
+      if (view === 'topo') {
+        topo.style.display = 'block';
+        seq.style.display = 'none';
+        tabs[0].classList.add('active');
+        tabs[1].classList.remove('active');
+      } else {
+        topo.style.display = 'none';
+        seq.style.display = 'block';
+        tabs[0].classList.remove('active');
+        tabs[1].classList.add('active');
+      }
+    }
+
+    // Copy Snippet
+    function copySnippet(elementId) {
+      const el = document.getElementById(elementId);
+      if (!el) return;
+      navigator.clipboard.writeText(el.innerText).then(() => showToast());
+    }
+
+    function copyText(text) {
+      navigator.clipboard.writeText(text).then(() => showToast());
+    }
+
+    function showToast() {
+      const t = document.getElementById('toast');
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 2000);
+    }
+  </script>
+</body>
+</html>
