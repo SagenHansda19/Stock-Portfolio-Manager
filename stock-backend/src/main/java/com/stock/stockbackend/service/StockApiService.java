@@ -9,6 +9,7 @@ import com.stock.stockbackend.exception.StockApiRateLimitException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
@@ -58,6 +59,11 @@ public class StockApiService {
         }
     }
 
+    @Cacheable(
+            value = "stockHistoryRaw",
+            key = "(#symbol != null ? #symbol.trim().toUpperCase() : '') + '_' + (#range != null ? #range.value : '1D')",
+            unless = "#result == null || #result.values() == null || #result.values().isEmpty()"
+    )
     public TwelveDataTimeSeriesResponse fetchTimeSeries(String symbol, HistoricalRange range) {
         try {
             log.info(

@@ -56,6 +56,17 @@ class StockPriceServiceTest {
     }
 
     @Test
+    void stockApiService_FetchTimeSeries_HasCacheableAnnotation() throws NoSuchMethodException {
+        Method method = StockApiService.class.getMethod("fetchTimeSeries", String.class, HistoricalRange.class);
+        Cacheable cacheable = method.getAnnotation(Cacheable.class);
+
+        assertNotNull(cacheable, "fetchTimeSeries must have @Cacheable annotation");
+        assertEquals("stockHistoryRaw", cacheable.value()[0]);
+        assertTrue(cacheable.key().contains("#symbol"), "Key must reference #symbol");
+        assertTrue(cacheable.key().contains("#range"), "Key must reference #range");
+    }
+
+    @Test
     void getHistoricalPrices_WhenDbCacheFresh_ReturnsCachedAndBypassesExternalApi() {
         String symbol = "AAPL";
         String interval = "1D";

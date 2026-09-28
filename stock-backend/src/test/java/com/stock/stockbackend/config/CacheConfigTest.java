@@ -77,6 +77,7 @@ class CacheConfigTest {
 
         assertNotNull(manager);
         assertNotNull(manager.getCacheConfigurations().get(CacheConfig.STOCK_HISTORY_CACHE));
+        assertNotNull(manager.getCacheConfigurations().get(CacheConfig.STOCK_HISTORY_RAW_CACHE));
         assertNotNull(manager.getCacheConfigurations().get(CacheConfig.STOCK_CHART_CACHE));
     }
 

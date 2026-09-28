@@ -30,6 +30,7 @@ import org.springframework.data.redis.serializer.RedisSerializer;
 public class CacheConfig implements CachingConfigurer {
 
     public static final String STOCK_HISTORY_CACHE = "stockHistory";
+    public static final String STOCK_HISTORY_RAW_CACHE = "stockHistoryRaw";
     public static final String STOCK_CHART_CACHE = "stockChart";
 
     public static final Duration DEFAULT_CACHE_TTL = Duration.ofMinutes(15);
@@ -53,10 +54,27 @@ public class CacheConfig implements CachingConfigurer {
             }
         }
 
-        if (effectiveUrl != null) {
-            log.info("Configuring Redis/Valkey connection using unified REDIS_URL");
+        if (effectiveUrl != null && (effectiveUrl.startsWith("redis://") || effectiveUrl.startsWith("rediss://"))) {
+            log.info("Configuring Redis/Valkey connection using URL: {}", maskUrl(effectiveUrl));
             RedisConfiguration redisConfig = LettuceConnectionFactory.createRedisConfiguration(effectiveUrl);
-            return new LettuceConnectionFactory(redisConfig);
+
+            if (password != null && !password.isBlank() && redisConfig instanceof RedisStandaloneConfiguration standalone) {
+                if (!standalone.getPassword().isPresent()) {
+                    standalone.setPassword(RedisPassword.of(password.trim()));
+                }
+            }
+            if (username != null && !username.isBlank() && redisConfig instanceof RedisStandaloneConfiguration standalone) {
+                if (standalone.getUsername() == null || standalone.getUsername().isBlank()) {
+                    standalone.setUsername(username.trim());
+                }
+            }
+
+            boolean isSsl = effectiveUrl.startsWith("rediss://") || sslEnabled;
+            LettuceClientConfiguration clientConfig = isSsl
+                    ? LettuceClientConfiguration.builder().useSsl().build()
+                    : LettuceClientConfiguration.builder().build();
+
+            return new LettuceConnectionFactory(redisConfig, clientConfig);
         }
 
         log.info("Configuring Redis/Valkey connection to host [{}:{}] (SSL: {})", host, port, sslEnabled);
@@ -73,6 +91,10 @@ public class CacheConfig implements CachingConfigurer {
                 : LettuceClientConfiguration.builder().build();
 
         return new LettuceConnectionFactory(standaloneConfig, clientConfig);
+    }
+
+    private static String maskUrl(String url) {
+        return url != null ? url.replaceAll(":[^:@]+@", ":****@") : "";
     }
 
     @Bean
@@ -129,6 +151,7 @@ public class CacheConfig implements CachingConfigurer {
         Map<String, RedisCacheConfiguration> initialCacheConfigs = new HashMap<>();
         RedisCacheConfiguration stockHistoryConfig = stockHistoryCacheConfiguration();
         initialCacheConfigs.put(STOCK_HISTORY_CACHE, stockHistoryConfig);
+        initialCacheConfigs.put(STOCK_HISTORY_RAW_CACHE, stockHistoryConfig);
         initialCacheConfigs.put(STOCK_CHART_CACHE, stockHistoryConfig);
 
         return RedisCacheManager.builder(connectionFactory)
