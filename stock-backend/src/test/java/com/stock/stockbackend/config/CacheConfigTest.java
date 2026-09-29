@@ -84,6 +84,7 @@ class CacheConfigTest {
         assertNotNull(manager.getCacheConfigurations().get(CacheConfig.STOCK_HISTORY_CACHE));
         assertNotNull(manager.getCacheConfigurations().get(CacheConfig.STOCK_HISTORY_RAW_CACHE));
         assertNotNull(manager.getCacheConfigurations().get(CacheConfig.STOCK_CHART_CACHE));
+        assertNotNull(manager.getCacheConfigurations().get(CacheConfig.PORTFOLIO_ANALYSIS_CACHE));
     }
 
     @Test
@@ -140,9 +141,11 @@ class CacheConfigTest {
     }
 
     @Test
-    void redisHealthCheckRunner_WhenPingFailsWithoutRemoteEnv_LogsGracefully() throws Exception {
+    void redisHealthCheckRunner_WhenPingFails_DoesNotThrowAndFailsOpenGracefully() throws Exception {
         RedisConnectionFactory connectionFactory = mock(RedisConnectionFactory.class);
-        when(connectionFactory.getConnection()).thenThrow(new RuntimeException("Connection refused"));
+        RedisConnection connection = mock(RedisConnection.class);
+        when(connectionFactory.getConnection()).thenReturn(connection);
+        when(connection.ping()).thenThrow(new RuntimeException("Connection timed out"));
 
         ApplicationRunner runner = cacheConfig.redisHealthCheckRunner(connectionFactory);
         assertNotNull(runner);

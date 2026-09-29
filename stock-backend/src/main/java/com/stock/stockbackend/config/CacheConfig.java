@@ -17,6 +17,8 @@ import org.springframework.data.redis.cache.RedisCacheWriter;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.data.redis.connection.RedisConnection;
 import org.springframework.beans.factory.annotation.Value;
+import io.lettuce.core.ClientOptions;
+import io.lettuce.core.SocketOptions;
 import org.springframework.data.redis.connection.RedisConfiguration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.connection.RedisPassword;
@@ -34,6 +36,7 @@ public class CacheConfig implements CachingConfigurer {
     public static final String STOCK_HISTORY_CACHE = "stockHistory";
     public static final String STOCK_HISTORY_RAW_CACHE = "stockHistoryRaw";
     public static final String STOCK_CHART_CACHE = "stockChart";
+    public static final String PORTFOLIO_ANALYSIS_CACHE = "portfolioAnalysis";
 
     public static final Duration DEFAULT_CACHE_TTL = Duration.ofMinutes(15);
     public static final Duration INTRADAY_CACHE_TTL = Duration.ofSeconds(60);
@@ -56,6 +59,14 @@ public class CacheConfig implements CachingConfigurer {
             }
         }
 
+        SocketOptions socketOptions = SocketOptions.builder()
+                .connectTimeout(Duration.ofSeconds(2))
+                .build();
+        ClientOptions clientOptions = ClientOptions.builder()
+                .socketOptions(socketOptions)
+                .autoReconnect(true)
+                .build();
+
         LettuceConnectionFactory factory;
         if (effectiveUrl != null && (effectiveUrl.startsWith("redis://") || effectiveUrl.startsWith("rediss://"))) {
             log.info("Configuring LettuceConnectionFactory using URL: {}", maskUrl(effectiveUrl));
@@ -73,11 +84,14 @@ public class CacheConfig implements CachingConfigurer {
             }
 
             boolean isSsl = effectiveUrl.startsWith("rediss://") || sslEnabled;
-            LettuceClientConfiguration clientConfig = isSsl
-                    ? LettuceClientConfiguration.builder().useSsl().build()
-                    : LettuceClientConfiguration.builder().build();
+            LettuceClientConfiguration.LettuceClientConfigurationBuilder clientConfigBuilder = LettuceClientConfiguration.builder()
+                    .commandTimeout(Duration.ofSeconds(2))
+                    .clientOptions(clientOptions);
+            if (isSsl) {
+                clientConfigBuilder.useSsl();
+            }
 
-            factory = new LettuceConnectionFactory(redisConfig, clientConfig);
+            factory = new LettuceConnectionFactory(redisConfig, clientConfigBuilder.build());
         } else {
             log.info("Configuring LettuceConnectionFactory to host [{}:{}] (SSL: {})", host, port, sslEnabled);
             RedisStandaloneConfiguration standaloneConfig = new RedisStandaloneConfiguration(host, port);
@@ -88,36 +102,32 @@ public class CacheConfig implements CachingConfigurer {
                 standaloneConfig.setUsername(username.trim());
             }
 
-            LettuceClientConfiguration clientConfig = (sslEnabled || port == 6380)
-                    ? LettuceClientConfiguration.builder().useSsl().build()
-                    : LettuceClientConfiguration.builder().build();
+            boolean isSsl = sslEnabled || port == 6380;
+            LettuceClientConfiguration.LettuceClientConfigurationBuilder clientConfigBuilder = LettuceClientConfiguration.builder()
+                    .commandTimeout(Duration.ofSeconds(2))
+                    .clientOptions(clientOptions);
+            if (isSsl) {
+                clientConfigBuilder.useSsl();
+            }
 
-            factory = new LettuceConnectionFactory(standaloneConfig, clientConfig);
+            factory = new LettuceConnectionFactory(standaloneConfig, clientConfigBuilder.build());
         }
 
-        factory.setValidateConnection(true);
+        // Set validateConnection to false so Spring Boot bean creation does not block on remote Redis ping
+        factory.setValidateConnection(false);
         factory.afterPropertiesSet();
-        factory.start();
         return factory;
     }
 
     @Bean
     public ApplicationRunner redisHealthCheckRunner(RedisConnectionFactory connectionFactory) {
         return args -> {
-            log.info("Performing startup health-check ping to Redis/Valkey instance...");
+            log.info("Performing non-blocking startup health-check ping to Redis/Valkey instance...");
             try (RedisConnection connection = connectionFactory.getConnection()) {
                 String pingResponse = connection.ping();
                 log.info("SUCCESS: Connected to Redis/Valkey instance. PING response: [{}]", pingResponse);
             } catch (Exception exception) {
-                log.error("CRITICAL: Failed to connect to Redis/Valkey instance: {}", exception.getMessage(), exception);
-                String envHost = System.getenv("REDIS_HOST");
-                String envUrl = System.getenv("REDIS_URL");
-                if ((envHost != null && !envHost.isBlank()) || (envUrl != null && !envUrl.isBlank())) {
-                    throw new IllegalStateException(
-                            "Failed to connect to configured Redis/Valkey instance on startup: " + exception.getMessage(),
-                            exception
-                    );
-                }
+                log.warn("Redis/Valkey instance is unreachable during startup health-check: {}. Application startup proceeding with fail-open caching.", exception.getMessage());
             }
         };
     }
@@ -182,6 +192,7 @@ public class CacheConfig implements CachingConfigurer {
         initialCacheConfigs.put(STOCK_HISTORY_CACHE, stockHistoryConfig);
         initialCacheConfigs.put(STOCK_HISTORY_RAW_CACHE, stockHistoryConfig);
         initialCacheConfigs.put(STOCK_CHART_CACHE, stockHistoryConfig);
+        initialCacheConfigs.put(PORTFOLIO_ANALYSIS_CACHE, cacheConfiguration().entryTtl(Duration.ofMinutes(30)));
 
         return RedisCacheManager.builder(connectionFactory)
                 .cacheDefaults(cacheConfiguration())

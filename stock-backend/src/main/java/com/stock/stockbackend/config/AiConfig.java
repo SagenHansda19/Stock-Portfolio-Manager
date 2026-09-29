@@ -8,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Lazy;
 
 @Configuration
 @Slf4j
@@ -20,6 +21,7 @@ public class AiConfig {
     private String modelName;
 
     @Bean
+    @Lazy
     public ChatLanguageModel chatLanguageModel() {
         String apiKeyToUse = (geminiApiKey != null && !geminiApiKey.isBlank()) ? geminiApiKey : "mock-api-key";
         log.info("Initializing LangChain4j GoogleAiGeminiChatModel bean with modelName={}, temperature=0.2", modelName);

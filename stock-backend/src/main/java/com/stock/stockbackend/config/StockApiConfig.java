@@ -4,6 +4,7 @@ import java.time.Duration;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.web.client.RestClient;
@@ -40,6 +41,7 @@ public class StockApiConfig {
     }
 
     @Bean
+    @Lazy
     public RestClient geminiRestClient(
             @Value("${stock.api.gemini.base-url}") String baseUrl,
             @Value("${stock.api.connect-timeout-seconds}") long connectTimeoutSeconds,

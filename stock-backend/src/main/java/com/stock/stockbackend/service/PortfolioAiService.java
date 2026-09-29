@@ -7,19 +7,29 @@ import com.stock.stockbackend.repository.PortfolioPositionRepository;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import java.util.ArrayList;
 import java.util.List;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 @Service
-@RequiredArgsConstructor
+@Lazy
 @Slf4j
 public class PortfolioAiService {
 
     private final PortfolioPositionRepository positionRepository;
     private final ChatLanguageModel chatLanguageModel;
     private final ObjectMapper objectMapper;
+
+    public PortfolioAiService(
+            PortfolioPositionRepository positionRepository,
+            @Lazy ChatLanguageModel chatLanguageModel,
+            ObjectMapper objectMapper
+    ) {
+        this.positionRepository = positionRepository;
+        this.chatLanguageModel = chatLanguageModel;
+        this.objectMapper = objectMapper;
+    }
 
     /**
      * Generates or retrieves from Redis cache a comprehensive AI portfolio evaluation for the specified user.
