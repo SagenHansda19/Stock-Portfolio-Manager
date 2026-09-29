@@ -14,6 +14,8 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.cache.RedisCacheConfiguration;
 import org.springframework.data.redis.cache.RedisCacheManager;
 import org.springframework.data.redis.cache.RedisCacheWriter;
+import org.springframework.boot.ApplicationRunner;
+import org.springframework.data.redis.connection.RedisConnection;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.connection.RedisConfiguration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
@@ -38,7 +40,7 @@ public class CacheConfig implements CachingConfigurer {
     public static final Duration HISTORICAL_CACHE_TTL = Duration.ofHours(1);
 
     @Bean
-    public RedisConnectionFactory redisConnectionFactory(
+    public LettuceConnectionFactory redisConnectionFactory(
             @Value("${REDIS_URL:${spring.data.redis.url:}}") String redisUrl,
             @Value("${spring.data.redis.host:localhost}") String host,
             @Value("${spring.data.redis.port:6379}") int port,
@@ -54,8 +56,9 @@ public class CacheConfig implements CachingConfigurer {
             }
         }
 
+        LettuceConnectionFactory factory;
         if (effectiveUrl != null && (effectiveUrl.startsWith("redis://") || effectiveUrl.startsWith("rediss://"))) {
-            log.info("Configuring Redis/Valkey connection using URL: {}", maskUrl(effectiveUrl));
+            log.info("Configuring LettuceConnectionFactory using URL: {}", maskUrl(effectiveUrl));
             RedisConfiguration redisConfig = LettuceConnectionFactory.createRedisConfiguration(effectiveUrl);
 
             if (password != null && !password.isBlank() && redisConfig instanceof RedisStandaloneConfiguration standalone) {
@@ -74,23 +77,49 @@ public class CacheConfig implements CachingConfigurer {
                     ? LettuceClientConfiguration.builder().useSsl().build()
                     : LettuceClientConfiguration.builder().build();
 
-            return new LettuceConnectionFactory(redisConfig, clientConfig);
+            factory = new LettuceConnectionFactory(redisConfig, clientConfig);
+        } else {
+            log.info("Configuring LettuceConnectionFactory to host [{}:{}] (SSL: {})", host, port, sslEnabled);
+            RedisStandaloneConfiguration standaloneConfig = new RedisStandaloneConfiguration(host, port);
+            if (password != null && !password.isBlank()) {
+                standaloneConfig.setPassword(RedisPassword.of(password.trim()));
+            }
+            if (username != null && !username.isBlank()) {
+                standaloneConfig.setUsername(username.trim());
+            }
+
+            LettuceClientConfiguration clientConfig = (sslEnabled || port == 6380)
+                    ? LettuceClientConfiguration.builder().useSsl().build()
+                    : LettuceClientConfiguration.builder().build();
+
+            factory = new LettuceConnectionFactory(standaloneConfig, clientConfig);
         }
 
-        log.info("Configuring Redis/Valkey connection to host [{}:{}] (SSL: {})", host, port, sslEnabled);
-        RedisStandaloneConfiguration standaloneConfig = new RedisStandaloneConfiguration(host, port);
-        if (password != null && !password.isBlank()) {
-            standaloneConfig.setPassword(RedisPassword.of(password.trim()));
-        }
-        if (username != null && !username.isBlank()) {
-            standaloneConfig.setUsername(username.trim());
-        }
+        factory.setValidateConnection(true);
+        factory.afterPropertiesSet();
+        factory.start();
+        return factory;
+    }
 
-        LettuceClientConfiguration clientConfig = (sslEnabled || port == 6380)
-                ? LettuceClientConfiguration.builder().useSsl().build()
-                : LettuceClientConfiguration.builder().build();
-
-        return new LettuceConnectionFactory(standaloneConfig, clientConfig);
+    @Bean
+    public ApplicationRunner redisHealthCheckRunner(RedisConnectionFactory connectionFactory) {
+        return args -> {
+            log.info("Performing startup health-check ping to Redis/Valkey instance...");
+            try (RedisConnection connection = connectionFactory.getConnection()) {
+                String pingResponse = connection.ping();
+                log.info("SUCCESS: Connected to Redis/Valkey instance. PING response: [{}]", pingResponse);
+            } catch (Exception exception) {
+                log.error("CRITICAL: Failed to connect to Redis/Valkey instance: {}", exception.getMessage(), exception);
+                String envHost = System.getenv("REDIS_HOST");
+                String envUrl = System.getenv("REDIS_URL");
+                if ((envHost != null && !envHost.isBlank()) || (envUrl != null && !envUrl.isBlank())) {
+                    throw new IllegalStateException(
+                            "Failed to connect to configured Redis/Valkey instance on startup: " + exception.getMessage(),
+                            exception
+                    );
+                }
+            }
+        };
     }
 
     private static String maskUrl(String url) {
@@ -165,26 +194,26 @@ public class CacheConfig implements CachingConfigurer {
         return new CacheErrorHandler() {
             @Override
             public void handleCacheGetError(RuntimeException exception, Cache cache, Object key) {
-                log.warn("Redis Cache GET failed for key [{}] in cache [{}]: {}. Falling back to source.",
-                        key, cache != null ? cache.getName() : "unknown", exception.getMessage());
+                log.error("Redis Cache GET failed for key [{}] in cache [{}]: {}. Falling back to source.",
+                        key, cache != null ? cache.getName() : "unknown", exception.getMessage(), exception);
             }
 
             @Override
             public void handleCachePutError(RuntimeException exception, Cache cache, Object key, Object value) {
-                log.warn("Redis Cache PUT failed for key [{}] in cache [{}]: {}",
-                        key, cache != null ? cache.getName() : "unknown", exception.getMessage());
+                log.error("Redis Cache PUT failed for key [{}] in cache [{}]: {}",
+                        key, cache != null ? cache.getName() : "unknown", exception.getMessage(), exception);
             }
 
             @Override
             public void handleCacheEvictError(RuntimeException exception, Cache cache, Object key) {
-                log.warn("Redis Cache EVICT failed for key [{}] in cache [{}]: {}",
-                        key, cache != null ? cache.getName() : "unknown", exception.getMessage());
+                log.error("Redis Cache EVICT failed for key [{}] in cache [{}]: {}",
+                        key, cache != null ? cache.getName() : "unknown", exception.getMessage(), exception);
             }
 
             @Override
             public void handleCacheClearError(RuntimeException exception, Cache cache) {
-                log.warn("Redis Cache CLEAR failed in cache [{}]: {}",
-                        cache != null ? cache.getName() : "unknown", exception.getMessage());
+                log.error("Redis Cache CLEAR failed in cache [{}]: {}",
+                        cache != null ? cache.getName() : "unknown", exception.getMessage(), exception);
             }
         };
     }

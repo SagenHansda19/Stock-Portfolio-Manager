@@ -5,13 +5,18 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import java.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.boot.ApplicationRunner;
+import org.springframework.boot.DefaultApplicationArguments;
 import org.springframework.cache.interceptor.CacheErrorHandler;
 import org.springframework.data.redis.cache.RedisCacheConfiguration;
 import org.springframework.data.redis.cache.RedisCacheManager;
+import org.springframework.data.redis.connection.RedisConnection;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 
 class CacheConfigTest {
@@ -118,6 +123,30 @@ class CacheConfigTest {
                 true
         );
         assertNotNull(factory);
+    }
+
+    @Test
+    void redisHealthCheckRunner_WhenPingSucceeds_RunsCleanly() throws Exception {
+        RedisConnectionFactory connectionFactory = mock(RedisConnectionFactory.class);
+        RedisConnection connection = mock(RedisConnection.class);
+        when(connectionFactory.getConnection()).thenReturn(connection);
+        when(connection.ping()).thenReturn("PONG");
+
+        ApplicationRunner runner = cacheConfig.redisHealthCheckRunner(connectionFactory);
+        assertNotNull(runner);
+        runner.run(new DefaultApplicationArguments());
+
+        verify(connection).ping();
+    }
+
+    @Test
+    void redisHealthCheckRunner_WhenPingFailsWithoutRemoteEnv_LogsGracefully() throws Exception {
+        RedisConnectionFactory connectionFactory = mock(RedisConnectionFactory.class);
+        when(connectionFactory.getConnection()).thenThrow(new RuntimeException("Connection refused"));
+
+        ApplicationRunner runner = cacheConfig.redisHealthCheckRunner(connectionFactory);
+        assertNotNull(runner);
+        runner.run(new DefaultApplicationArguments());
     }
 
     @Test

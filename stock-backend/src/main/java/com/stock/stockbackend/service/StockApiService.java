@@ -60,9 +60,8 @@ public class StockApiService {
     }
 
     @Cacheable(
-            value = "stockHistoryRaw",
-            key = "(#symbol != null ? #symbol.trim().toUpperCase() : '') + '_' + (#range != null ? #range.value : '1D')",
-            unless = "#result == null || #result.values() == null || #result.values().isEmpty()"
+            value = "stockHistory",
+            key = "#symbol + '_' + #range"
     )
     public TwelveDataTimeSeriesResponse fetchTimeSeries(String symbol, HistoricalRange range) {
         try {

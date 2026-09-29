@@ -61,7 +61,7 @@ class StockPriceServiceTest {
         Cacheable cacheable = method.getAnnotation(Cacheable.class);
 
         assertNotNull(cacheable, "fetchTimeSeries must have @Cacheable annotation");
-        assertEquals("stockHistoryRaw", cacheable.value()[0]);
+        assertEquals("stockHistory", cacheable.value()[0]);
         assertTrue(cacheable.key().contains("#symbol"), "Key must reference #symbol");
         assertTrue(cacheable.key().contains("#range"), "Key must reference #range");
     }
