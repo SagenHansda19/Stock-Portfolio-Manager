@@ -20,13 +20,7 @@ import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-import java.util.Optional;
 import java.util.regex.Pattern;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.stock.stockbackend.entity.StockHistoryCache;
-import com.stock.stockbackend.repository.StockHistoryCacheRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.Cacheable;
@@ -48,8 +42,6 @@ public class StockPriceService {
 
     private final StockApiService stockApiService;
     private final StockPriceRepository stockPriceRepository;
-    private final StockHistoryCacheRepository stockHistoryCacheRepository;
-    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Transactional
     public StockPriceResponse fetchAndSaveLatestPrice(String rawSymbol) {
@@ -87,55 +79,13 @@ public class StockPriceService {
             key = "(#symbol != null ? #symbol.trim().toUpperCase() : '') + '_' + (#interval != null && !#interval.trim().isEmpty() ? #interval.trim().toUpperCase() : '1D')",
             unless = "#result == null || #result.isEmpty()"
     )
-    @Transactional
     public List<StockHistoryPointResponse> getHistoricalPrices(String symbol, String interval) {
         String normalizedSymbol = normalizeSymbol(symbol);
         HistoricalRange range = HistoricalRange.fromValue(interval);
 
-        Optional<StockHistoryCache> optionalCache = stockHistoryCacheRepository
-                .findByStockSymbolAndTimeRange(normalizedSymbol, range.getValue());
-
-        if (optionalCache.isPresent()) {
-            StockHistoryCache cache = optionalCache.get();
-            long ttl = getCacheTtlSeconds(range);
-            if (cache.getUpdatedAt().plusSeconds(ttl).isAfter(Instant.now())) {
-                try {
-                    return objectMapper.readValue(
-                            cache.getDataJson(),
-                            new TypeReference<List<StockHistoryPointResponse>>() {}
-                    );
-                } catch (JsonProcessingException e) {
-                    log.warn("Failed to deserialize stock history cache for symbol={}, range={}. Fetching fresh.", normalizedSymbol, range.getValue(), e);
-                }
-            }
-        }
-
+        log.info("Cache miss for stock history symbol={} interval={}. Fetching from external API.", normalizedSymbol, range.getValue());
         TwelveDataTimeSeriesResponse response = stockApiService.fetchTimeSeries(normalizedSymbol, range);
-        List<StockHistoryPointResponse> points = mapHistoryPoints(normalizedSymbol, range, response);
-
-        try {
-            String json = objectMapper.writeValueAsString(points);
-            StockHistoryCache cache = optionalCache.orElseGet(StockHistoryCache::new);
-            cache.setStockSymbol(normalizedSymbol);
-            cache.setTimeRange(range.getValue());
-            cache.setDataJson(json);
-            cache.setUpdatedAt(Instant.now());
-            stockHistoryCacheRepository.save(cache);
-        } catch (JsonProcessingException e) {
-            log.error("Failed to serialize stock history cache for symbol={}, range={}", normalizedSymbol, range.getValue(), e);
-        }
-
-        return points;
-    }
-
-    private long getCacheTtlSeconds(HistoricalRange range) {
-        return switch (range) {
-            case ONE_DAY -> 300L;       // 5 mins
-            case ONE_WEEK -> 3600L;     // 1 hour
-            case ONE_MONTH -> 3600L;    // 1 hour
-            case ONE_YEAR -> 86400L;    // 24 hours
-            case ALL -> 86400L;         // 24 hours
-        };
+        return mapHistoryPoints(normalizedSymbol, range, response);
     }
 
     private void validateQuote(String symbol, FinnhubQuoteResponse quote) {
