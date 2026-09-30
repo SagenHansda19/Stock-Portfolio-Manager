@@ -60,7 +60,8 @@ public class CacheConfig implements CachingConfigurer {
         }
 
         SocketOptions socketOptions = SocketOptions.builder()
-                .connectTimeout(Duration.ofSeconds(2))
+                .connectTimeout(Duration.ofSeconds(10))
+                .keepAlive(true)
                 .build();
         ClientOptions clientOptions = ClientOptions.builder()
                 .socketOptions(socketOptions)
@@ -85,7 +86,7 @@ public class CacheConfig implements CachingConfigurer {
 
             boolean isSsl = effectiveUrl.startsWith("rediss://") || sslEnabled;
             LettuceClientConfiguration.LettuceClientConfigurationBuilder clientConfigBuilder = LettuceClientConfiguration.builder()
-                    .commandTimeout(Duration.ofSeconds(2))
+                    .commandTimeout(Duration.ofSeconds(10))
                     .clientOptions(clientOptions);
             if (isSsl) {
                 clientConfigBuilder.useSsl();
@@ -104,7 +105,7 @@ public class CacheConfig implements CachingConfigurer {
 
             boolean isSsl = sslEnabled || port == 6380;
             LettuceClientConfiguration.LettuceClientConfigurationBuilder clientConfigBuilder = LettuceClientConfiguration.builder()
-                    .commandTimeout(Duration.ofSeconds(2))
+                    .commandTimeout(Duration.ofSeconds(10))
                     .clientOptions(clientOptions);
             if (isSsl) {
                 clientConfigBuilder.useSsl();
@@ -127,7 +128,7 @@ public class CacheConfig implements CachingConfigurer {
                 String pingResponse = connection.ping();
                 log.info("SUCCESS: Connected to Redis/Valkey instance. PING response: [{}]", pingResponse);
             } catch (Exception exception) {
-                log.warn("Redis/Valkey instance is unreachable during startup health-check: {}. Application startup proceeding with fail-open caching.", exception.getMessage());
+                log.warn("Redis/Valkey instance is temporarily unreachable during startup health-check: {}. Lettuce connection watchdog will handle automatic background reconnection. Application continuing with fail-open caching.", exception.getMessage());
             }
         };
     }
