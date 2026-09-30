@@ -144,7 +144,7 @@ public class CacheConfig implements CachingConfigurer {
                 .disableCachingNullValues()
                 .serializeValuesWith(
                         RedisSerializationContext.SerializationPair.fromSerializer(
-                                RedisSerializer.json()
+                                new org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer()
                         )
                 );
     }
@@ -166,7 +166,7 @@ public class CacheConfig implements CachingConfigurer {
                 .disableCachingNullValues()
                 .serializeValuesWith(
                         RedisSerializationContext.SerializationPair.fromSerializer(
-                                RedisSerializer.json()
+                                new org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer()
                         )
                 );
     }
@@ -188,6 +188,82 @@ public class CacheConfig implements CachingConfigurer {
 
     @Bean
     public RedisCacheManager cacheManager(RedisConnectionFactory connectionFactory) {
+        RedisCacheWriter loggingCacheWriter = new RedisCacheWriter() {
+            private final RedisCacheWriter delegate = RedisCacheWriter.nonLockingRedisCacheWriter(connectionFactory);
+
+            @Override
+            public void put(String name, byte[] key, byte[] value, Duration ttl) {
+                delegate.put(name, key, value, ttl);
+                log.info("REDIS CACHE WRITE SUCCESS: Cache [{}] stored key [{}] ({} bytes) with TTL={}",
+                        name, new String(key, java.nio.charset.StandardCharsets.UTF_8), value.length, ttl);
+            }
+
+            @Override
+            public byte[] get(String name, byte[] key) {
+                byte[] val = delegate.get(name, key);
+                String keyStr = new String(key, java.nio.charset.StandardCharsets.UTF_8);
+                if (val != null) {
+                    log.info("REDIS CACHE HIT: Cache [{}] found key [{}] ({} bytes)", name, keyStr, val.length);
+                } else {
+                    log.info("REDIS CACHE MISS: Cache [{}] key [{}] not found in Redis", name, keyStr);
+                }
+                return val;
+            }
+
+            @Override
+            public java.util.concurrent.CompletableFuture<byte[]> retrieve(String name, byte[] key, Duration ttl) {
+                return delegate.retrieve(name, key, ttl);
+            }
+
+            @Override
+            public java.util.concurrent.CompletableFuture<Void> store(String name, byte[] key, byte[] value, Duration ttl) {
+                return delegate.store(name, key, value, ttl);
+            }
+
+            @Override
+            public byte[] putIfAbsent(String name, byte[] key, byte[] value, Duration ttl) {
+                return delegate.putIfAbsent(name, key, value, ttl);
+            }
+
+            @Override
+            public void remove(String name, byte[] key) {
+                delegate.remove(name, key);
+            }
+
+            @Override
+            public void evict(String name, byte[] key) {
+                delegate.evict(name, key);
+                log.info("REDIS CACHE EVICT: Cache [{}] evicted key [{}]",
+                        name, new String(key, java.nio.charset.StandardCharsets.UTF_8));
+            }
+
+            @Override
+            public void clean(String name, byte[] pattern) {
+                delegate.clean(name, pattern);
+            }
+
+            @Override
+            public void clear(String name, byte[] pattern) {
+                delegate.clear(name, pattern);
+                log.info("REDIS CACHE CLEAR: Cache [{}] cleared", name);
+            }
+
+            @Override
+            public void clearStatistics(String name) {
+                delegate.clearStatistics(name);
+            }
+
+            @Override
+            public org.springframework.data.redis.cache.CacheStatistics getCacheStatistics(String name) {
+                return delegate.getCacheStatistics(name);
+            }
+
+            @Override
+            public RedisCacheWriter withStatisticsCollector(org.springframework.data.redis.cache.CacheStatisticsCollector cacheStatisticsCollector) {
+                return delegate.withStatisticsCollector(cacheStatisticsCollector);
+            }
+        };
+
         Map<String, RedisCacheConfiguration> initialCacheConfigs = new HashMap<>();
         RedisCacheConfiguration stockHistoryConfig = stockHistoryCacheConfiguration();
         initialCacheConfigs.put(STOCK_HISTORY_CACHE, stockHistoryConfig);
@@ -195,7 +271,7 @@ public class CacheConfig implements CachingConfigurer {
         initialCacheConfigs.put(STOCK_CHART_CACHE, stockHistoryConfig);
         initialCacheConfigs.put(PORTFOLIO_ANALYSIS_CACHE, cacheConfiguration().entryTtl(Duration.ofMinutes(30)));
 
-        return RedisCacheManager.builder(connectionFactory)
+        return RedisCacheManager.builder(loggingCacheWriter)
                 .cacheDefaults(cacheConfiguration())
                 .withInitialCacheConfigurations(initialCacheConfigs)
                 .build();

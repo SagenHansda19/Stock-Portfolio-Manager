@@ -83,9 +83,11 @@ public class StockPriceService {
         String normalizedSymbol = normalizeSymbol(symbol);
         HistoricalRange range = HistoricalRange.fromValue(interval);
 
-        log.info("Cache miss for stock history symbol={} interval={}. Fetching from external API.", normalizedSymbol, range.getValue());
+        log.info("CACHE MISS: Fetching fresh stock history from external API for symbol={} interval={}", normalizedSymbol, range.getValue());
         TwelveDataTimeSeriesResponse response = stockApiService.fetchTimeSeries(normalizedSymbol, range);
-        return mapHistoryPoints(normalizedSymbol, range, response);
+        List<StockHistoryPointResponse> points = mapHistoryPoints(normalizedSymbol, range, response);
+        log.info("CACHE POPULATE: Retrieved {} history points from external API for symbol={} interval={}", points.size(), normalizedSymbol, range.getValue());
+        return points;
     }
 
     private void validateQuote(String symbol, FinnhubQuoteResponse quote) {

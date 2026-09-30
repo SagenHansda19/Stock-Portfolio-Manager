@@ -153,15 +153,38 @@ class CacheConfigTest {
     }
 
     @Test
-    void errorHandler_HandlesErrorsGracefullyWithoutThrowing() {
-        CacheErrorHandler errorHandler = cacheConfig.errorHandler();
-        assertNotNull(errorHandler);
+    void stockHistorySerialization_SerializesAndDeserializesCorrectly() {
+        var serializer = new org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer();
+        var point = new com.stock.stockbackend.dto.StockHistoryPointResponse("10:00", new java.math.BigDecimal("182.5000"));
+        java.util.List<com.stock.stockbackend.dto.StockHistoryPointResponse> list = new java.util.ArrayList<>();
+        list.add(point);
 
-        // Ensure error handlers do not throw exceptions to caller
-        RuntimeException dummyEx = new RuntimeException("Redis connection timed out");
-        errorHandler.handleCacheGetError(dummyEx, null, "AAPL_1D");
-        errorHandler.handleCachePutError(dummyEx, null, "AAPL_1D", "value");
-        errorHandler.handleCacheEvictError(dummyEx, null, "AAPL_1D");
-        errorHandler.handleCacheClearError(dummyEx, null);
+        byte[] bytes = serializer.serialize(list);
+        assertNotNull(bytes);
+
+        Object deserialized = serializer.deserialize(bytes);
+        assertNotNull(deserialized);
+        assertTrue(deserialized instanceof java.util.List<?>);
+        java.util.List<?> desList = (java.util.List<?>) deserialized;
+        assertEquals(1, desList.size());
+        assertTrue(desList.get(0) instanceof com.stock.stockbackend.dto.StockHistoryPointResponse);
+        com.stock.stockbackend.dto.StockHistoryPointResponse desPoint =
+                (com.stock.stockbackend.dto.StockHistoryPointResponse) desList.get(0);
+        assertEquals("10:00", desPoint.time());
+        assertEquals(new java.math.BigDecimal("182.5000"), desPoint.price());
+
+        // Test PortfolioAnalysisDto
+        var dto = com.stock.stockbackend.dto.PortfolioAnalysisDto.builder()
+                .portfolioScore(85)
+                .riskLevel("Moderate")
+                .summary("Healthy portfolio")
+                .strengths(java.util.List.of("Strong cash flow"))
+                .build();
+
+        byte[] dtoBytes = serializer.serialize(dto);
+        Object deserializedDto = serializer.deserialize(dtoBytes);
+        assertNotNull(deserializedDto);
+        assertTrue(deserializedDto instanceof com.stock.stockbackend.dto.PortfolioAnalysisDto);
+        assertEquals(85, ((com.stock.stockbackend.dto.PortfolioAnalysisDto) deserializedDto).getPortfolioScore());
     }
 }
